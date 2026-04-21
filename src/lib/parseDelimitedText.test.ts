@@ -1,18 +1,19 @@
 import { describe, expect, it } from 'vitest';
+import monthlySales from '../test/fixtures/monthly-sales.csv?raw';
 import { parseDelimitedText } from './parseDelimitedText';
 
 const oversized = `name,value\n${Array.from({ length: 5001 }, (_, index) => `A${index},${index}`).join('\n')}`;
 
 describe('parseDelimitedText', () => {
-  it('쉼표 구분 데이터를 파싱한다', () => {
-    const result = parseDelimitedText('name,value\nA,10\nB,20');
+  it('CSV 파일 fixture를 파싱한다', () => {
+    const result = parseDelimitedText(monthlySales);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.columns).toEqual(['name', 'value']);
-    expect(result.data.rows[0]).toEqual({ name: 'A', value: 10 });
+    expect(result.data.columns).toEqual(['month', 'revenue', 'visitors', 'channel']);
+    expect(result.data.rows[0]).toEqual({ month: '2026-01-01', revenue: 1200000, visitors: 3200, channel: '검색' });
   });
 
-  it('탭 구분 데이터를 파싱한다', () => {
+  it('탭 구분 fixture 형태를 파싱한다', () => {
     const result = parseDelimitedText('name\tvalue\nA\t10');
     expect(result.ok).toBe(true);
     if (!result.ok) return;
