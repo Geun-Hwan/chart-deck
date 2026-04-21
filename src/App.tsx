@@ -5,21 +5,18 @@ import { DataInputPanel } from './components/DataInputPanel';
 import { DataPreview } from './components/DataPreview';
 import { SummaryDashboard } from './components/SummaryDashboard';
 import { buildChartCandidates } from './lib/chartCandidates';
-import type { ChartStatus } from './lib/dataTypes';
 import { summarizeDataset } from './lib/datasetSummary';
 import { inferColumnTypes } from './lib/inferColumnTypes';
 import { parseDelimitedText } from './lib/parseDelimitedText';
 import type { SampleDataset } from './data/sampleData';
 import { sampleDatasets } from './data/sampleData';
 
-type ChartFilter = 'all' | ChartStatus;
-
 export function App() {
   const [inputText, setInputText] = useState('');
-  const [sourceLabel, setSourceLabel] = useState('입력 대기');
+  const [sourceLabel, setSourceLabel] = useState('아직 데이터 없음');
   const [parseError, setParseError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
-  const [chartFilter, setChartFilter] = useState<ChartFilter>('all');
+  const [selectedChartId, setSelectedChartId] = useState<string | null>(null);
 
   const parsed = useMemo(() => {
     if (inputText.trim().length === 0) {
@@ -51,16 +48,31 @@ export function App() {
     setInputText(sample.text);
   }, []);
 
+  useEffect(() => {
+    if (candidates.length === 0) {
+      setSelectedChartId(null);
+      return;
+    }
+    if (selectedChartId && candidates.some((candidate) => candidate.id === selectedChartId)) return;
+    setSelectedChartId(candidates.find((candidate) => candidate.status === 'ready')?.id ?? candidates[0]?.id ?? null);
+  }, [candidates, selectedChartId]);
+
   function resetFeedback() {
     setParseError(null);
     setWarnings([]);
-    setChartFilter('all');
+    setSelectedChartId(null);
   }
 
   function handleTextChange(text: string) {
     resetFeedback();
-    setSourceLabel(text.trim().length > 0 ? '직접 입력' : '입력 대기');
+    setSourceLabel(text.trim().length > 0 ? '직접 붙여넣은 CSV' : '아직 데이터 없음');
     setInputText(text);
+  }
+
+  function handleClear() {
+    resetFeedback();
+    setSourceLabel('아직 데이터 없음');
+    setInputText('');
   }
 
   function handleLoadSample(sample: SampleDataset) {
@@ -71,49 +83,54 @@ export function App() {
 
   function handleFileText(text: string, fileName: string) {
     resetFeedback();
-    setSourceLabel(`CSV · ${fileName}`);
+    setSourceLabel(`내 CSV · ${fileName}`);
     setInputText(text);
   }
 
   return (
-    <main className="app-shell redesigned-shell">
-      <header className="app-topbar">
-        <div>
+    <main className="studio-shell">
+      <aside className="studio-rail" aria-label="데이터 입력 패널">
+        <header className="brand-block">
           <p className="eyebrow">Chart Deck Lab</p>
-          <h1>CSV를 넣고 바로 볼 차트를 고르세요</h1>
-        </div>
-        <ol className="flow-steps" aria-label="작업 흐름">
-          <li>입력</li>
-          <li>해석</li>
-          <li>추천</li>
-          <li>비교</li>
-        </ol>
-      </header>
+          <h1>CSV를 차트 감각으로 바꾸는 실험실</h1>
+          <p>한 번에 모든 걸 보여주지 않습니다. 먼저 데이터를 읽고, 가장 말이 되는 차트부터 보여줍니다.</p>
+        </header>
+        <DataInputPanel
+          inputText={inputText}
+          onTextChange={handleTextChange}
+          onLoadSample={handleLoadSample}
+          onFileText={handleFileText}
+          onError={setParseError}
+          onClear={handleClear}
+        />
+      </aside>
 
-      <SummaryDashboard summary={summary} sourceLabel={sourceLabel} />
-
-      {activeError ? <Alert tone="danger" title="입력을 확인해주세요" messages={[activeError]} /> : null}
-      {activeWarnings.length > 0 ? <Alert tone="warning" title="데이터 해석 안내" messages={[...new Set(activeWarnings)]} /> : null}
-
-      <div className="product-workspace">
-        <aside className="control-rail">
-          <DataInputPanel
-            inputText={inputText}
-            onTextChange={handleTextChange}
-            onLoadSample={handleLoadSample}
-            onFileText={handleFileText}
-            onError={setParseError}
-          />
-        </aside>
-
-        <section className="result-canvas">
-          <div className="insight-row">
-            <ColumnSummary profiles={profiles} />
-            <DataPreview data={parsed.data} />
+      <section className="studio-stage" aria-label="시각화 결과 영역">
+        <div className="stage-topline">
+          <div>
+            <span>지금 보는 데이터</span>
+            <strong>{sourceLabel}</strong>
           </div>
-          <ChartGrid candidates={parsed.data ? candidates : []} rows={parsed.data?.rows ?? []} filter={chartFilter} onFilterChange={setChartFilter} />
-        </section>
-      </div>
+          <p>로컬 브라우저 처리 · 서버 업로드 없음 · 1MB/5,000행 제한</p>
+        </div>
+
+        <SummaryDashboard summary={summary} sourceLabel={sourceLabel} />
+
+        {activeError ? <Alert tone="danger" title="입력을 확인해주세요" messages={[activeError]} /> : null}
+        {activeWarnings.length > 0 ? <Alert tone="warning" title="데이터 해석 안내" messages={[...new Set(activeWarnings)]} /> : null}
+
+        <ChartGrid
+          candidates={parsed.data ? candidates : []}
+          rows={parsed.data?.rows ?? []}
+          selectedId={selectedChartId}
+          onSelect={setSelectedChartId}
+        />
+
+        <div className="evidence-drawer">
+          <ColumnSummary profiles={profiles} />
+          <DataPreview data={parsed.data} />
+        </div>
+      </section>
     </main>
   );
 }

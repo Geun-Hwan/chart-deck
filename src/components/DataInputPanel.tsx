@@ -4,24 +4,17 @@ import type { SampleDataset } from '../data/sampleData';
 import { sampleDatasets } from '../data/sampleData';
 import { readTextFile } from '../lib/fileInput';
 
-type InputMode = 'sample' | 'paste' | 'file';
-
 type Props = {
   inputText: string;
   onTextChange: (text: string) => void;
   onLoadSample: (sample: SampleDataset) => void;
   onFileText: (text: string, fileName: string) => void;
   onError: (message: string) => void;
+  onClear: () => void;
 };
 
-const modes: Array<{ id: InputMode; label: string; description: string }> = [
-  { id: 'sample', label: '샘플로 시작', description: '바로 차트 후보를 확인합니다.' },
-  { id: 'paste', label: '붙여넣기', description: '표 데이터를 직접 넣습니다.' },
-  { id: 'file', label: 'CSV 파일', description: '로컬 파일만 읽습니다.' },
-];
-
-export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileText, onError }: Props) {
-  const [mode, setMode] = useState<InputMode>('sample');
+export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileText, onError, onClear }: Props) {
+  const [isPasteOpen, setIsPasteOpen] = useState(false);
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -35,61 +28,50 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
   }
 
   return (
-    <section className="panel input-panel">
-      <div className="section-heading compact-heading">
+    <section className="input-studio">
+      <div className="input-heading">
+        <span>1</span>
         <div>
-          <p className="eyebrow">Step 1</p>
-          <h2>데이터 선택</h2>
+          <h2>데이터를 고르세요</h2>
+          <p>처음이면 샘플 CSV 하나만 눌러도 됩니다.</p>
         </div>
-        <span className="soft-badge">로컬 처리</span>
       </div>
-      <p className="hint">가장 쉬운 방법부터 선택하세요. CSV와 붙여넣기는 1MB·5,000행까지만 처리합니다.</p>
 
-      <div className="mode-tabs" aria-label="데이터 입력 방식">
-        {modes.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={mode === item.id ? 'active' : ''}
-            onClick={() => setMode(item.id)}
-            aria-pressed={mode === item.id}
-          >
-            <strong>{item.label}</strong>
-            <span>{item.description}</span>
+      <div className="sample-stack" aria-label="샘플 CSV 목록">
+        {sampleDatasets.map((sample, index) => (
+          <button key={sample.id} type="button" className={index === 0 ? 'sample-card hero-sample' : 'sample-card'} onClick={() => onLoadSample(sample)}>
+            <span>{index === 0 ? '처음 추천' : '다른 관점'}</span>
+            <strong>{sample.name}</strong>
+            <small>{sample.description}</small>
           </button>
         ))}
       </div>
 
-      {mode === 'sample' ? (
-        <div className="sample-list" aria-label="샘플 데이터 목록">
-          {sampleDatasets.map((sample, index) => (
-            <button key={sample.id} type="button" className={index === 0 ? 'primary-sample' : ''} onClick={() => onLoadSample(sample)}>
-              <strong>{index === 0 ? `추천 시작점 · ${sample.name}` : sample.name}</strong>
-              <span>{sample.description}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
+      <label className="file-action">
+        <span>내 CSV 파일 열기</span>
+        <small>업로드가 아니라 브라우저 안에서만 읽습니다.</small>
+        <input type="file" accept=".csv,text/csv,text/plain" onChange={handleFileChange} />
+      </label>
 
-      {mode === 'paste' ? (
-        <label className="text-input">
-          <span>직접 입력 또는 붙여넣기</span>
+      <button type="button" className="paste-toggle" aria-expanded={isPasteOpen} onClick={() => setIsPasteOpen((value) => !value)}>
+        CSV 텍스트 붙여넣기 {isPasteOpen ? '닫기' : '열기'}
+      </button>
+
+      {isPasteOpen ? (
+        <label className="text-input paste-panel">
+          <span>CSV 텍스트</span>
           <textarea
             value={inputText}
             onChange={(event) => onTextChange(event.target.value)}
             spellCheck={false}
-            placeholder="예: name,value\nA,10\nB,20"
+            placeholder="month,revenue\n2026-01-01,1200000"
           />
         </label>
       ) : null}
 
-      {mode === 'file' ? (
-        <label className="file-picker file-dropzone">
-          <span>CSV 파일 선택</span>
-          <small>파일은 업로드되지 않고 브라우저에서만 읽습니다.</small>
-          <input type="file" accept=".csv,text/csv,text/plain" onChange={handleFileChange} />
-        </label>
-      ) : null}
+      <button type="button" className="clear-button" onClick={onClear} disabled={inputText.trim().length === 0}>
+        데이터 비우기
+      </button>
     </section>
   );
 }
