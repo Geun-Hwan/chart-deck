@@ -410,9 +410,6 @@ Execute `omx setup` to install all components. Execute `omx doctor` to verify in
 
 <!-- OMX:AGENTS-INIT:MANUAL:START -->
 ## Local Notes
-- 코드 변경을 완료한 뒤에는 `git status --short`로 변경 범위를 확인하고, 검증 결과와 함께 커밋 여부를 명시한다.
-- 구현 작업은 가능한 한 태스크 단위로 나누어 커밋한다. 권장 순서: 계획/규칙, 스캐폴딩/환경, 핵심 로직, UI/통합, 테스트/문서.
-- 커밋 메시지는 위 Lore Commit Protocol을 따른다. 첫 줄은 “무엇”보다 “왜”를 설명하고, `Tested:`와 `Not-tested:`를 포함한다.
-- 사용자가 푸시까지 기대하는 흐름에서는 커밋 후 원격 브랜치 상태를 확인하고 `git push`를 시도한다. 단, 푸시는 외부 원격 저장소를 변경하므로 인증/권한/네트워크 오류가 나면 즉시 근거를 보고한다.
-- 최종 보고에는 커밋 해시, 푸시 결과, 미커밋 변경 여부, 검증 명령 결과를 포함한다.
+- 코드 작업 전 `docs/` 폴더의 모든 Markdown 문서를 읽고, 특히 `docs/agent-workflow.md`의 태스크 분해·커밋·푸시·검증 규칙을 따른다.
+- `AGENTS.md`에는 짧은 운영 지침만 유지하고, 상세 절차는 `docs/`에 둔다.
 <!-- OMX:AGENTS-INIT:MANUAL:END -->
