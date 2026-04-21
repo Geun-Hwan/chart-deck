@@ -8,15 +8,16 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run --pool=forks --reporter=dot"
+    "test": "vitest run --config vitest.config.ts --pool=forks --reporter=dot",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "react": "latest",
-    "react-dom": "latest",
-    "recharts": "latest"
+    "react-dom": "latest"
   },
   "devDependencies": {
     "@eslint/js": "latest",
+    "@playwright/test": "^1.59.1",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@vitejs/plugin-react": "latest",
