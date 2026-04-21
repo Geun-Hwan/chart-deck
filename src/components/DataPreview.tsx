@@ -9,28 +9,33 @@ export function DataPreview({ data }: Props) {
     return <EmptyPanel title="데이터 미리보기" message="샘플을 선택하거나 데이터를 입력하면 표 미리보기가 표시됩니다." />;
   }
 
-  const previewRows = data.rows.slice(0, 8);
+  const previewRows = data.rows.slice(0, 5);
   return (
-    <section className="panel">
-      <div className="section-heading">
-        <p className="eyebrow">Preview</p>
-        <h2>데이터 미리보기</h2>
+    <section className="panel quiet-panel">
+      <div className="section-heading compact-heading">
+        <div>
+          <p className="eyebrow">Check</p>
+          <h2>데이터가 이렇게 읽혔어요</h2>
+        </div>
+        <span className="soft-badge">보조 확인</span>
       </div>
-      <p className="hint">총 {data.rows.length.toLocaleString('ko-KR')}행 · 구분자 {data.delimiter === '\t' ? '탭' : '쉼표'}</p>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>{data.columns.map((column) => <th key={column}>{column}</th>)}</tr>
-          </thead>
-          <tbody>
-            {previewRows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {data.columns.map((column) => <td key={column}>{row[column] ?? '-'}</td>)}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <details className="preview-details">
+        <summary>{data.rows.length.toLocaleString('ko-KR')}행 중 {previewRows.length}행 미리보기 · {data.delimiter === '\t' ? '탭' : '쉼표'} 구분</summary>
+        <div className="table-wrap compact-table">
+          <table>
+            <thead>
+              <tr>{data.columns.map((column) => <th key={column}>{column}</th>)}</tr>
+            </thead>
+            <tbody>
+              {previewRows.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {data.columns.map((column) => <td key={column}>{row[column] ?? '-'}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
     </section>
   );
 }

@@ -17,11 +17,11 @@ import {
   YAxis,
 } from 'recharts';
 import type { ChartCandidate, DataRow } from '../../lib/dataTypes';
+import { WarningPlaceholder } from '../WarningPlaceholder';
 
 function requireKey(key: string | undefined): string {
   return key ?? '__missing_key__';
 }
-import { WarningPlaceholder } from '../WarningPlaceholder';
 
 type Props = {
   candidate: ChartCandidate;
@@ -52,7 +52,7 @@ function renderChart(candidate: ChartCandidate, rows: DataRow[]) {
   switch (candidate.id) {
     case 'bar':
       return (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={candidate.status === 'warning' ? 180 : 240}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey={requireKey(candidate.categoryKey)} />
@@ -64,7 +64,7 @@ function renderChart(candidate: ChartCandidate, rows: DataRow[]) {
       );
     case 'line':
       return (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={candidate.status === 'warning' ? 180 : 240}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey={requireKey(candidate.xKey)} />
@@ -76,7 +76,7 @@ function renderChart(candidate: ChartCandidate, rows: DataRow[]) {
       );
     case 'scatter':
       return (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={candidate.status === 'warning' ? 180 : 240}>
           <ScatterChart>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey={requireKey(candidate.xKey)} name={requireKey(candidate.xKey)} />
@@ -88,7 +88,7 @@ function renderChart(candidate: ChartCandidate, rows: DataRow[]) {
       );
     case 'pie':
       return (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={candidate.status === 'warning' ? 180 : 240}>
           <PieChart>
             <Tooltip />
             <Pie data={data} dataKey={requireKey(candidate.valueKey)} nameKey={requireKey(candidate.categoryKey)} outerRadius={80} label>
@@ -101,7 +101,7 @@ function renderChart(candidate: ChartCandidate, rows: DataRow[]) {
       );
     case 'area':
       return (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={candidate.status === 'warning' ? 180 : 240}>
           <AreaChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey={requireKey(candidate.xKey)} />

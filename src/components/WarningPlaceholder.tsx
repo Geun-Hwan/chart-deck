@@ -2,8 +2,8 @@ import type { ChartStatus } from '../lib/dataTypes';
 
 const labelByStatus: Record<ChartStatus, string> = {
   ready: '준비됨',
-  warning: '경고',
-  placeholder: '더미',
+  warning: '확인 필요',
+  placeholder: '조건 부족',
   error: '오류',
 };
 
@@ -15,11 +15,7 @@ type Props = {
 export function WarningPlaceholder({ status, reason }: Props) {
   return (
     <div className={`warning-placeholder status-${status}`}>
-      <div className="dummy-chart" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </div>
+      <span className="placeholder-icon" aria-hidden="true">!</span>
       <strong>{labelByStatus[status]}</strong>
       <p>{reason}</p>
     </div>
