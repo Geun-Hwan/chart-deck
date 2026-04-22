@@ -44,15 +44,15 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
       <div className="input-heading">
         <span>1</span>
         <div>
-          <h2>데이터를 고르세요</h2>
-          <p>처음이면 샘플 CSV 하나만 눌러도 됩니다.</p>
+          <h2>데이터를 궤도에 올리세요</h2>
+          <p>샘플, 파일, 붙여넣기 중 하나를 골라 관측을 시작합니다.</p>
         </div>
       </div>
 
       <div className="sample-stack" aria-label="샘플 CSV 목록">
         {sampleDatasets.map((sample, index) => (
           <button key={sample.id} type="button" className={index === 0 ? 'sample-card hero-sample' : 'sample-card'} onClick={() => onLoadSample(sample)}>
-            <span>{index === 0 ? '처음 추천' : '다른 관점'}</span>
+            <span>{index === 0 ? '시동 데이터' : '보조 궤도'}</span>
             <strong>{sample.name}</strong>
             <small>{sample.description}</small>
           </button>

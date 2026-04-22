@@ -97,8 +97,8 @@ input[type='file']::file-selector-button {
   z-index: 0;
   min-height: 100vh;
   display: grid;
-  gap: 18px;
-  padding: 18px;
+  gap: clamp(14px, 1.5vw, 22px);
+  padding: clamp(12px, 1.4vw, 20px);
   isolation: isolate;
 }
 
@@ -118,7 +118,7 @@ input[type='file']::file-selector-button {
 
 .mission-header {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.9fr);
+  grid-template-columns: minmax(360px, 1.08fr) minmax(300px, 0.92fr);
   gap: 16px;
   align-items: stretch;
 }
@@ -141,7 +141,7 @@ input[type='file']::file-selector-button {
 .mission-copy {
   position: relative;
   overflow: hidden;
-  padding: 24px 28px;
+  padding: clamp(22px, 2.2vw, 34px);
 }
 
 .mission-copy::after {
@@ -168,9 +168,9 @@ input[type='file']::file-selector-button {
   position: relative;
   z-index: 1;
   margin: 12px 0 16px;
-  max-width: 12ch;
+  max-width: 13ch;
   font-family: 'Fraunces', Georgia, serif;
-  font-size: clamp(2.7rem, 4.4vw, 5rem);
+  font-size: clamp(2.6rem, 4.15vw, 4.9rem);
   line-height: 0.9;
   letter-spacing: -0.06em;
 }
@@ -190,7 +190,7 @@ input[type='file']::file-selector-button {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: clamp(12px, 1.4vw, 18px);
 }
 
 .mission-signals span {
@@ -442,7 +442,7 @@ input[type='file']::file-selector-button {
 }
 
 textarea {
-  min-height: 240px;
+  min-height: clamp(220px, 27vw, 340px);
   resize: vertical;
   border: 1px solid rgba(165, 180, 252, 0.16);
   border-radius: 20px;
@@ -458,7 +458,7 @@ textarea::placeholder {
 
 .operation-grid {
   display: grid;
-  grid-template-columns: minmax(280px, 0.84fr) minmax(0, 1.55fr) minmax(320px, 0.9fr);
+  grid-template-columns: minmax(260px, 0.78fr) minmax(440px, 1.62fr) minmax(300px, 0.88fr);
   gap: 16px;
   align-items: start;
 }
@@ -593,7 +593,7 @@ textarea::placeholder {
 }
 
 .empty-compass {
-  min-height: 440px;
+  min-height: clamp(340px, 42vw, 520px);
   display: grid;
   place-items: center;
   padding: 36px;
@@ -630,7 +630,18 @@ textarea::placeholder {
 .chart-compass {
   position: relative;
   overflow: hidden;
-  padding: 24px;
+  padding: clamp(18px, 1.7vw, 26px);
+}
+
+.chart-compass::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 18px;
+  width: 78px;
+  height: 138px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(8, 13, 24, 0.92));
 }
 
 .chart-compass::before {
@@ -671,15 +682,15 @@ textarea::placeholder {
   display: grid;
   grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.6fr);
   gap: 16px;
-  margin-top: 18px;
+  margin-top: clamp(12px, 1.4vw, 18px);
 }
 
 .recommendation-card {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 100%;
-  padding: 24px;
+  min-height: clamp(260px, 30vw, 420px);
+  padding: clamp(18px, 1.8vw, 24px);
   border-radius: 28px;
   background: linear-gradient(180deg, rgba(202, 255, 79, 0.12), rgba(122, 165, 255, 0.08));
   border: 1px solid rgba(202, 255, 79, 0.18);
@@ -716,7 +727,7 @@ textarea::placeholder {
 }
 
 .chart-card.featured {
-  min-height: 420px;
+  min-height: clamp(320px, 38vw, 500px);
 }
 
 .chart-card h3 {
@@ -749,7 +760,7 @@ textarea::placeholder {
   grid-auto-flow: column;
   grid-auto-columns: minmax(170px, 1fr);
   gap: 12px;
-  margin-top: 18px;
+  margin-top: clamp(12px, 1.4vw, 18px);
   overflow-x: auto;
   padding: 0 44px 12px 0;
   scroll-snap-type: x proximity;
@@ -830,7 +841,7 @@ textarea::placeholder {
 
 .native-chart {
   width: 100%;
-  min-height: 240px;
+  min-height: clamp(220px, 27vw, 340px);
   display: block;
   overflow: visible;
 }
@@ -891,9 +902,19 @@ textarea::placeholder {
   margin-bottom: 14px;
 }
 
+.section-heading h2 {
+  margin: 4px 0 0;
+  font-size: clamp(1.25rem, 1.45vw, 1.7rem);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  word-break: keep-all;
+}
+
 .soft-badge {
   display: inline-flex;
   align-items: center;
+  flex: 0 0 auto;
+  white-space: nowrap;
   border-radius: 999px;
   padding: 7px 10px;
   background: rgba(125, 211, 252, 0.12);

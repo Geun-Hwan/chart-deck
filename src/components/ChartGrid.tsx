@@ -13,8 +13,8 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
     return (
       <section className="empty-compass" aria-labelledby="empty-compass-title">
         <span aria-hidden="true">?</span>
-        <h2 id="empty-compass-title">아직 차트를 고를 데이터가 없습니다</h2>
-        <p>왼쪽에서 샘플 CSV를 누르거나 내 CSV 파일을 열면, 여기서 가장 어울리는 차트를 먼저 보여드립니다.</p>
+        <h2 id="empty-compass-title">아직 관측할 데이터가 없습니다</h2>
+        <p>샘플 CSV를 띄우거나 내 데이터를 올리면, 가장 선명한 차트 궤도부터 중앙에 고정합니다.</p>
       </section>
     );
   }
@@ -26,15 +26,15 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
       <div className="compass-header">
         <div>
           <p className="eyebrow">Chart Compass</p>
-          <h2 id="chart-compass-title">이 데이터로 무엇을 볼까요?</h2>
+          <h2 id="chart-compass-title">어떤 궤도로 볼까요?</h2>
         </div>
-        <p>추천을 먼저 보고, 아래 후보를 눌러 관점을 바꿔보세요.</p>
+        <p>주 시야를 먼저 고정하고, 아래 후보를 넘겨 관측 각도를 바꿉니다.</p>
       </div>
 
       {selected ? (
         <div className="compass-main">
           <aside className="recommendation-card">
-            <span className="recommendation-label">지금 가장 먼저 볼 차트</span>
+            <span className="recommendation-label">주 관측 궤도</span>
             <h3>{selected.title}</h3>
             <p>{selected.reason}</p>
           </aside>

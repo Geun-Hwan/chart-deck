@@ -93,10 +93,10 @@ export function App() {
       <header className="mission-header" aria-label="차트 데크 관제 브리핑">
         <div className="mission-copy">
           <p className="eyebrow">Chart Deck Lab</p>
-          <h1>CSV를 차트 감각으로 바꾸는 실험실</h1>
+          <h1>데이터 궤도를 여는 차트 관측소</h1>
           <p>
-            한 번에 모든 걸 보여주지 않습니다. 먼저 데이터를 해석하고, 지금 가장 말이 되는 차트와 함께
-            다음 관점을 제안합니다.
+            표를 올리면 관측 가능한 궤도부터 띄웁니다. 부족한 데이터도 버리지 않고, 가능한 시야와
+            보완 신호를 함께 보여줍니다.
           </p>
           <div className="mission-signals" aria-label="핵심 운영 지표">
             <span>브라우저 로컬 처리</span>
@@ -107,10 +107,10 @@ export function App() {
 
         <div className="mission-panel">
           <div className="mission-panel__source">
-            <span>지금 보는 데이터</span>
+            <span>현재 관측 좌표</span>
             <strong aria-live="polite">{sourceLabel}</strong>
           </div>
-          <p>선택된 차트는 중앙 무대에서 유지되고, 나머지 패널은 보조 관측값으로 분리됩니다.</p>
+          <p>중앙 무대는 주 시야, 주변 패널은 보조 신호입니다. 데이터 밀도가 바뀌어도 관측 흐름은 유지됩니다.</p>
         </div>
       </header>
 
