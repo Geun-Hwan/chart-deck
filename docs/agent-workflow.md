@@ -69,3 +69,13 @@ npm run build
 - `AGENTS.md`에는 에이전트가 반드시 알아야 할 짧은 규칙과 문서 참조만 둔다.
 - 상세한 작업 절차, 검증 목록, 커밋/푸시 정책은 `docs/`에 둔다.
 - `docs/`가 존재하면 코드 작업 전에 모든 Markdown 문서를 읽고 규칙을 반영한다.
+
+## 7. 반복 작업 자동화
+
+반복되는 외부 실행은 직접 긴 명령을 매번 치지 말고 스크립트로 실행한다.
+
+- 전체 검증: `npm run verify`
+- UI 스냅샷 생성: `npm run snapshots`
+- 반복 프로세스 정리: `npm run cleanup:processes`
+
+새로운 반복 작업이 생기면 `scripts/` 아래에 Node 스크립트로 추가하고 `package.json` script에 연결한다.

@@ -19,7 +19,7 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
     );
   }
 
-  const selected = candidates.find((candidate) => candidate.id === selectedId) ?? candidates.find((candidate) => candidate.status === 'ready') ?? candidates[0];
+  const selected = candidates.find((candidate) => candidate.id === selectedId) ?? candidates[0];
   const alternatives = candidates.filter((candidate) => candidate.id !== selected?.id);
 
   return (

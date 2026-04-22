@@ -9,7 +9,10 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts --pool=forks --reporter=dot",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "snapshots": "node scripts/capture-ui-snapshots.mjs",
+    "verify": "node scripts/verify.mjs",
+    "cleanup:processes": "node scripts/cleanup-processes.mjs"
   },
   "dependencies": {
     "react": "latest",

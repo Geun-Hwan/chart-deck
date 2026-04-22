@@ -109,9 +109,17 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
         },
   ];
 
-  return sortChartCandidates(candidates);
+  return sortChartCandidates(candidates, Boolean(dateColumn && firstNumber));
 }
 
-export function sortChartCandidates(candidates: ChartCandidate[]): ChartCandidate[] {
-  return [...candidates].sort((a, b) => statusRank[a.status] - statusRank[b.status]);
+export function sortChartCandidates(candidates: ChartCandidate[], preferTimeSeries = false): ChartCandidate[] {
+  const defaultPriority: Record<ChartCandidate['id'], number> = { bar: 0, line: 1, area: 2, scatter: 3, pie: 4 };
+  const timeSeriesPriority: Record<ChartCandidate['id'], number> = { line: 0, area: 1, bar: 2, scatter: 3, pie: 4 };
+  const priority = preferTimeSeries ? timeSeriesPriority : defaultPriority;
+
+  return [...candidates].sort((a, b) => {
+    const statusDelta = statusRank[a.status] - statusRank[b.status];
+    if (statusDelta !== 0) return statusDelta;
+    return priority[a.id] - priority[b.id];
+  });
 }

@@ -38,24 +38,24 @@ export function App() {
 
   const candidates = useMemo(() => buildChartCandidates(profiles), [profiles]);
   const summary = useMemo(() => summarizeDataset(parsed.data?.rows ?? [], profiles, candidates), [parsed.data, profiles, candidates]);
+  const preferredChartId = useMemo(() => {
+    const hasDate = profiles.some((profile) => profile.type === 'date');
+    const hasNumber = profiles.some((profile) => profile.type === 'number');
+    if (hasDate && hasNumber && candidates.some((candidate) => candidate.id === 'line' && candidate.status === 'ready')) {
+      return 'line';
+    }
+    return candidates[0]?.id ?? null;
+  }, [profiles, candidates]);
 
   useEffect(() => {
     const sampleId = new URLSearchParams(window.location.search).get('sample');
     if (!sampleId) return;
     const sample = sampleDatasets.find((item) => item.id === sampleId);
     if (!sample) return;
+    setSelectedChartId(null);
     setSourceLabel(sample.name);
     setInputText(sample.text);
   }, []);
-
-  useEffect(() => {
-    if (candidates.length === 0) {
-      setSelectedChartId(null);
-      return;
-    }
-    if (selectedChartId && candidates.some((candidate) => candidate.id === selectedChartId)) return;
-    setSelectedChartId(candidates.find((candidate) => candidate.status === 'ready')?.id ?? candidates[0]?.id ?? null);
-  }, [candidates, selectedChartId]);
 
   function resetFeedback() {
     setParseError(null);
@@ -77,6 +77,7 @@ export function App() {
 
   function handleLoadSample(sample: SampleDataset) {
     resetFeedback();
+    setSelectedChartId(null);
     setSourceLabel(sample.name);
     setInputText(sample.text);
   }
@@ -122,7 +123,7 @@ export function App() {
         <ChartGrid
           candidates={parsed.data ? candidates : []}
           rows={parsed.data?.rows ?? []}
-          selectedId={selectedChartId}
+          selectedId={selectedChartId ?? preferredChartId}
           onSelect={setSelectedChartId}
         />
 

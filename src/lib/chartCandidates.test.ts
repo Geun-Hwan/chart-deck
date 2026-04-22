@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import largeTimeseriesCsv from '../test/fixtures/large-timeseries.csv?raw';
+import { parseDelimitedText } from './parseDelimitedText';
+import { inferColumnTypes } from './inferColumnTypes';
 import { buildChartCandidates, sortChartCandidates } from './chartCandidates';
 import type { ChartCandidate, ColumnProfile } from './dataTypes';
 
@@ -32,4 +35,21 @@ describe('chartCandidates', () => {
     ];
     expect(sortChartCandidates(unsorted).map((candidate) => candidate.status)).toEqual(['ready', 'warning', 'placeholder', 'error']);
   });
+
+  it('날짜와 숫자가 있으면 선 차트를 먼저 추천한다', () => {
+    const candidates = buildChartCandidates(profiles);
+    expect(candidates[0]?.id).toBe('line');
+  });
+
+
+  it('대량 시계열 CSV에서도 선 차트를 먼저 추천한다', () => {
+    const parsed = parseDelimitedText(largeTimeseriesCsv);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const largeProfiles = inferColumnTypes(parsed.data.columns, parsed.data.rows);
+    expect(largeProfiles.find((profile) => profile.name === 'day')?.type).toBe('date');
+    const candidates = buildChartCandidates(largeProfiles);
+    expect(candidates[0]?.id).toBe('line');
+  });
+
 });

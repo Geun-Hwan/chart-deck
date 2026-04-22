@@ -1,3 +1,4 @@
+import { sampleChartPoints } from '../../lib/chartSampling';
 import type { ChartCandidate, DataRow, DataValue } from '../../lib/dataTypes';
 import { WarningPlaceholder } from '../WarningPlaceholder';
 
@@ -34,25 +35,39 @@ export function CandidateChart({ candidate, rows }: Props) {
 }
 
 function renderChart(candidate: ChartCandidate, rows: DataRow[]) {
-  const data = rows.slice(0, 8);
-  const points = toPoints(candidate, data);
+  const allPoints = toPoints(candidate, rows);
+  const sampled = sampleChartPoints(allPoints);
+  const points = sampled.points;
 
   if (points.length === 0) {
     return <WarningPlaceholder status="warning" reason="표시할 수 있는 숫자 값이 부족합니다." />;
   }
 
-  switch (candidate.id) {
-    case 'bar':
-      return <BarSvg points={points} />;
-    case 'line':
-      return <LineSvg points={points} area={false} />;
-    case 'area':
-      return <LineSvg points={points} area />;
-    case 'scatter':
-      return <ScatterSvg points={points} />;
-    case 'pie':
-      return <PieSvg points={points} />;
-  }
+  const chart = (() => {
+    switch (candidate.id) {
+      case 'bar':
+        return <BarSvg points={points} />;
+      case 'line':
+        return <LineSvg points={points} area={false} />;
+      case 'area':
+        return <LineSvg points={points} area />;
+      case 'scatter':
+        return <ScatterSvg points={points} />;
+      case 'pie':
+        return <PieSvg points={points} />;
+    }
+  })();
+
+  return (
+    <div className="chart-render-frame">
+      {sampled.isSampled ? (
+        <p className="sampling-note" data-testid="sampling-note">
+          {sampled.originalCount.toLocaleString('ko-KR')}개 중 {sampled.sampledCount.toLocaleString('ko-KR')}개 지점을 균등 샘플링해 표시합니다.
+        </p>
+      ) : null}
+      {chart}
+    </div>
+  );
 }
 
 function toPoints(candidate: ChartCandidate, rows: DataRow[]): Point[] {
@@ -110,7 +125,7 @@ function BarSvg({ points }: { points: Point[] }) {
         return (
           <g key={`${point.label}-${index}`}>
             <rect x={x} y={baseY - barHeight} width={barWidth} height={barHeight} rx="14" fill={palette[index % palette.length]} />
-            <text x={x + barWidth / 2} y={260} textAnchor="middle">{shortLabel(point.label)}</text>
+            {shouldShowLabel(index, points.length) ? <text x={x + barWidth / 2} y={260} textAnchor="middle">{shortLabel(point.label)}</text> : null}
           </g>
         );
       })}
@@ -138,7 +153,7 @@ function LineSvg({ points, area }: { points: Point[]; area: boolean }) {
       {coordinates.map((point, index) => (
         <g key={`${point.label}-${index}`}>
           <circle cx={point.x} cy={point.y} r="7" fill="#b6f24a" stroke="#101827" strokeWidth="3" />
-          <text x={point.x} y={260} textAnchor="middle">{shortLabel(point.label)}</text>
+          {shouldShowLabel(index, coordinates.length) ? <text x={point.x} y={260} textAnchor="middle">{shortLabel(point.label)}</text> : null}
         </g>
       ))}
     </svg>
@@ -212,6 +227,12 @@ function Grid({ width, height }: { width: number; height: number }) {
       ))}
     </g>
   );
+}
+
+function shouldShowLabel(index: number, total: number): boolean {
+  if (total <= 14) return true;
+  const step = Math.ceil(total / 6);
+  return index === 0 || index === total - 1 || index % step === 0;
 }
 
 function shortLabel(label: string): string {

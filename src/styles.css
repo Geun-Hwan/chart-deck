@@ -166,3 +166,16 @@ th { position: sticky; top: 0; background: #f8fafc; color: #334155; }
   .stage-topline, .compass-header { display: block; }
   .stage-topline p, .compass-header p { margin-top: 8px; }
 }
+
+.chart-render-frame { display: grid; gap: 8px; }
+.sampling-note {
+  margin: 0;
+  color: #475569;
+  font-size: 0.86rem;
+  font-weight: 850;
+  background: #ecfeff;
+  border: 1px solid #bae6fd;
+  border-radius: 999px;
+  width: fit-content;
+  padding: 7px 11px;
+}
