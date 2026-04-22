@@ -1,4 +1,11 @@
+import { useMemo, useState } from 'react';
 import { sampleChartPoints } from '../../lib/chartSampling';
+import {
+  CHART_POINT_WINDOW_SIZE,
+  applyChartPointWindow,
+  chartPointWindowOptions,
+  type ChartPointWindowMode,
+} from '../../lib/chartPointWindow';
 import type { ChartCandidate, DataRow, DataValue } from '../../lib/dataTypes';
 import { WarningPlaceholder } from '../WarningPlaceholder';
 
@@ -16,11 +23,14 @@ type Point = {
 const palette = ['#b6f24a', '#60a5fa', '#fb7185', '#fbbf24', '#a78bfa', '#34d399'];
 
 export function CandidateChart({ candidate, rows }: Props) {
+  const [windowMode, setWindowMode] = useState<ChartPointWindowMode>('all');
+  const prepared = useMemo(() => preparePoints(candidate, rows, windowMode), [candidate, rows, windowMode]);
+
   if (candidate.status === 'placeholder' || candidate.status === 'error') {
     return <WarningPlaceholder status={candidate.status} reason={candidate.reason} />;
   }
 
-  const chart = renderChart(candidate, rows);
+  const chart = renderChart(candidate, prepared.points, prepared, setWindowMode);
   if (candidate.status === 'warning') {
     return (
       <div className="chart-with-warning">
@@ -33,10 +43,27 @@ export function CandidateChart({ candidate, rows }: Props) {
   return chart;
 }
 
-function renderChart(candidate: ChartCandidate, rows: DataRow[]) {
+function preparePoints(candidate: ChartCandidate, rows: DataRow[], windowMode: ChartPointWindowMode) {
   const rawPoints = toPoints(candidate, rows, candidate.id === 'scatter');
   const allPoints = shouldAggregateCategoryPoints(candidate) ? aggregatePointsByLabel(rawPoints) : rawPoints;
-  const sampled = sampleChartPoints(allPoints);
+  const windowed = applyChartPointWindow(allPoints, windowMode);
+
+  return {
+    points: windowed.points,
+    allPointCount: windowed.originalCount,
+    isWindowed: windowed.isWindowed,
+    note: windowed.note,
+    mode: windowed.mode,
+  };
+}
+
+function renderChart(
+  candidate: ChartCandidate,
+  visiblePoints: Point[],
+  prepared: ReturnType<typeof preparePoints>,
+  onWindowModeChange: (mode: ChartPointWindowMode) => void,
+) {
+  const sampled = sampleChartPoints(visiblePoints);
   const points = sampled.points;
 
   if (points.length === 0) {
@@ -60,12 +87,44 @@ function renderChart(candidate: ChartCandidate, rows: DataRow[]) {
 
   return (
     <div className="chart-render-frame">
+      {prepared.allPointCount > CHART_POINT_WINDOW_SIZE ? (
+        <ChartWindowToolbar activeMode={prepared.mode} onChange={onWindowModeChange} />
+      ) : null}
+      {prepared.isWindowed ? (
+        <p className="chart-filter-note" data-testid="chart-filter-note">
+          {prepared.allPointCount.toLocaleString('ko-KR')}개 중 {prepared.note}
+        </p>
+      ) : null}
       {sampled.isSampled ? (
         <p className="sampling-note" data-testid="sampling-note">
           {sampled.originalCount.toLocaleString('ko-KR')}개 중 {sampled.sampledCount.toLocaleString('ko-KR')}개 지점을 균등 샘플링해 표시합니다.
         </p>
       ) : null}
       {chart}
+    </div>
+  );
+}
+
+function ChartWindowToolbar({
+  activeMode,
+  onChange,
+}: {
+  activeMode: ChartPointWindowMode;
+  onChange: (mode: ChartPointWindowMode) => void;
+}) {
+  return (
+    <div className="chart-window-toolbar" role="group" aria-label="차트 표시 범위">
+      {chartPointWindowOptions.map((option) => (
+        <button
+          key={option.mode}
+          type="button"
+          className={activeMode === option.mode ? 'is-active' : ''}
+          aria-pressed={activeMode === option.mode}
+          onClick={() => onChange(option.mode)}
+        >
+          {option.label}
+        </button>
+      ))}
     </div>
   );
 }

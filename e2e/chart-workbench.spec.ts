@@ -23,7 +23,7 @@ test('샘플 CSV를 선택하면 추천 차트와 대안 선택이 동작한다'
 
   await expect(page.getByText('월별 매출 CSV').first()).toBeVisible();
   await expect(page.getByRole('heading', { name: '어떤 차트가 어울릴까요?' })).toBeVisible();
-  await expect(page.getByText('추천 차트', { exact: true })).toBeVisible();
+  await expect(page.getByText('선택한 차트', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '선 차트' }).first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(5);
@@ -31,7 +31,7 @@ test('샘플 CSV를 선택하면 추천 차트와 대안 선택이 동작한다'
   await expect(page.locator('.choice-strip').getByRole('button', { name: /선 차트 선택/ })).toHaveAttribute('aria-pressed', 'true');
 
   await page.getByRole('button', { name: /막대 차트/ }).click();
-  await expect(page.getByText('추천 차트', { exact: true })).toBeVisible();
+  await expect(page.getByText('선택한 차트', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '막대 차트' }).first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first()).toBeVisible();
   await expect(page.locator('.choice-strip').getByRole('button', { name: /막대 차트 선택/ })).toHaveAttribute('aria-pressed', 'true');
@@ -67,11 +67,15 @@ test('CSV 텍스트 붙여넣기 흐름도 로컬 입력으로 선 차트를 추
   await expect(page.getByText('브라우저 로컬 처리')).toBeVisible();
   await expect(page.getByText('서버 업로드 없음')).toBeVisible();
   await page.getByRole('button', { name: /CSV 붙여넣기 열기/ }).click();
+  const pasteDialog = page.getByRole('dialog', { name: 'CSV 텍스트 붙여넣기' });
+  await expect(pasteDialog).toBeVisible();
   await page.getByRole('textbox', { name: 'CSV 텍스트 붙여넣기' }).fill('day,value,group\n2026-01-01,10,A\n2026-01-02,15,A\n2026-01-03,13,B');
+  await pasteDialog.getByRole('button', { name: '차트에 반영하고 닫기' }).click();
 
   await expect(page.locator('.mission-panel__source strong')).toHaveText('직접 붙여넣은 CSV');
+  await expect(pasteDialog).toBeHidden();
   await expect(page.getByRole('heading', { name: '어떤 차트가 어울릴까요?' })).toBeVisible();
-  await expect(page.getByText('추천 차트', { exact: true })).toBeVisible();
+  await expect(page.getByText('선택한 차트', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '선 차트' }).first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(3);
 });
@@ -93,10 +97,28 @@ test('대량 CSV는 차트 지점을 샘플링해 렌더링한다', async ({ pag
 
   await page.getByLabel('CSV 파일 선택').setInputFiles(largeCsvPath);
   await expect(page.locator('.mission-panel__source strong')).toHaveText('내 CSV · large-timeseries.csv');
-  await expect(page.getByText('추천 차트', { exact: true })).toBeVisible();
+  await expect(page.getByText('선택한 차트', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '선 차트' }).first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first()).toBeVisible();
   await expect(page.getByTestId('sampling-note').first()).toContainText('120개 중 36개');
+});
+
+test('대량 차트는 최근 확대와 상위값 필터로 표시 범위를 좁힐 수 있다', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByLabel('CSV 파일 선택').setInputFiles(largeCsvPath);
+  await expect(page.getByRole('group', { name: '차트 표시 범위' })).toBeVisible();
+
+  await page.getByRole('button', { name: '최근 12개 확대' }).click();
+  await expect(page.getByRole('button', { name: '최근 12개 확대' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('chart-filter-note')).toContainText('120개 중 최근 12개 지점만 확대');
+  await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(12);
+  await expect(page.getByTestId('sampling-note')).toHaveCount(0);
+
+  await page.getByRole('button', { name: '상위 12개 필터' }).click();
+  await expect(page.getByRole('button', { name: '상위 12개 필터' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('chart-filter-note')).toContainText('120개 중 값이 큰 상위 12개 지점만 필터링');
+  await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(12);
 });
 
 test('산점도는 행 순서가 아니라 첫 번째 숫자 컬럼을 x축으로 사용한다', async ({ page }) => {
@@ -130,14 +152,16 @@ test('키보드 입력과 오류 알림은 접근성 역할을 유지한다', as
   const pasteToggle = page.getByRole('button', { name: /CSV 붙여넣기/ });
   await pasteToggle.click();
   await expect(pasteToggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(pasteToggle).toHaveAttribute('aria-haspopup', 'dialog');
 
+  const pasteDialog = page.getByRole('dialog', { name: 'CSV 텍스트 붙여넣기' });
+  await expect(pasteDialog).toBeVisible();
+  await expect(pasteDialog).toHaveAttribute('aria-modal', 'true');
   const pasteTextarea = page.getByRole('textbox', { name: 'CSV 텍스트 붙여넣기' });
   await expect(pasteTextarea).toBeFocused();
-  await expect(page.getByRole('region', { name: 'CSV 텍스트 붙여넣기' })).toHaveAttribute('id', 'csv-paste-panel');
   await pasteTextarea.fill('header-only');
 
-  const closeToggle = page.getByRole('button', { name: /CSV 붙여넣기 닫기/ });
-  await closeToggle.click();
+  await pasteDialog.getByRole('button', { name: '창 닫기' }).click();
   await expect(page.getByRole('button', { name: /CSV 붙여넣기 열기/ })).toBeFocused();
   await expect(page.getByRole('button', { name: /CSV 붙여넣기 열기/ })).toHaveAttribute('aria-expanded', 'false');
 

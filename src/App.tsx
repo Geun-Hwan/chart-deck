@@ -113,6 +113,17 @@ export function App() {
         </div>
       </header>
 
+      <section className="control-deck" aria-label="데이터 입력 영역">
+        <DataInputPanel
+          inputText={inputText}
+          onTextChange={handleTextChange}
+          onLoadSample={handleLoadSample}
+          onFileText={handleFileText}
+          onError={setParseError}
+          onClear={handleClear}
+        />
+      </section>
+
       <section className="operation-grid" aria-label="시각화 운영 영역">
         <section className="visual-stage" aria-label="시각화 결과 영역">
           <ChartGrid
@@ -134,17 +145,6 @@ export function App() {
           <ColumnSummary profiles={profiles} />
           <DataPreview data={parsed.data} />
         </aside>
-      </section>
-
-      <section className="control-deck" aria-label="데이터 주입 콘솔">
-        <DataInputPanel
-          inputText={inputText}
-          onTextChange={handleTextChange}
-          onLoadSample={handleLoadSample}
-          onFileText={handleFileText}
-          onError={setParseError}
-          onClear={handleClear}
-        />
       </section>
     </main>
   );
