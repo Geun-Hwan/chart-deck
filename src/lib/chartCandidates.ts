@@ -19,24 +19,36 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
   const numberColumns = allByType(profiles, 'number');
   const categoryColumn = firstByType(profiles, 'category');
   const dateColumn = firstByType(profiles, 'date');
+  const fallbackLabelColumn = profiles.find((profile) => profile.type === 'unknown' && profile.nonEmptyCount > 0);
+  const labelColumn = categoryColumn ?? fallbackLabelColumn;
   const firstNumber = numberColumns[0];
   const secondNumber = numberColumns[1];
 
   const candidates: ChartCandidate[] = [
-    categoryColumn && firstNumber
+    labelColumn && firstNumber
       ? {
           id: 'bar',
           title: '막대 차트',
-          status: 'ready',
-          reason: `${categoryColumn.name} 범주와 ${firstNumber.name} 숫자 값을 비교할 수 있습니다.`,
-          categoryKey: categoryColumn.name,
+          status: categoryColumn ? 'ready' : 'warning',
+          reason: categoryColumn
+            ? `${categoryColumn.name} 범주와 ${firstNumber.name} 숫자 값을 비교할 수 있습니다.`
+            : `${labelColumn.name} 컬럼을 임시 라벨로 삼아 ${firstNumber.name} 값을 비교합니다.`,
+          categoryKey: labelColumn.name,
           valueKey: firstNumber.name,
         }
+      : firstNumber
+        ? {
+            id: 'bar',
+            title: '막대 차트',
+            status: 'warning',
+            reason: '범주 컬럼은 없지만 행 순서 기준으로 숫자 값을 비교합니다.',
+            valueKey: firstNumber.name,
+          }
       : {
           id: 'bar',
           title: '막대 차트',
           status: 'placeholder',
-          reason: '범주형 컬럼 1개와 숫자형 컬럼 1개가 필요합니다.',
+          reason: '숫자형 컬럼 1개 이상이 필요합니다.',
         },
     dateColumn && firstNumber
       ? {
@@ -56,11 +68,19 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
             xKey: categoryColumn.name,
             yKey: firstNumber.name,
           }
+        : firstNumber
+          ? {
+              id: 'line',
+              title: '선 차트',
+              status: 'warning',
+              reason: '날짜/범주 컬럼은 없지만 행 순서 흐름으로 숫자 변화를 표시합니다.',
+              yKey: firstNumber.name,
+            }
         : {
             id: 'line',
             title: '선 차트',
             status: 'placeholder',
-            reason: '날짜 또는 범주 컬럼과 숫자형 컬럼이 필요합니다.',
+            reason: '숫자형 컬럼 1개 이상이 필요합니다.',
           },
     firstNumber && secondNumber
       ? {
@@ -77,20 +97,30 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           status: 'placeholder',
           reason: '숫자형 컬럼 2개 이상이 필요합니다.',
         },
-    categoryColumn && firstNumber
+    labelColumn && firstNumber
       ? {
           id: 'pie',
           title: '파이 차트',
-          status: 'ready',
-          reason: `${categoryColumn.name} 범주의 ${firstNumber.name} 비중을 볼 수 있습니다.`,
-          categoryKey: categoryColumn.name,
+          status: categoryColumn ? 'ready' : 'warning',
+          reason: categoryColumn
+            ? `${categoryColumn.name} 범주의 ${firstNumber.name} 비중을 볼 수 있습니다.`
+            : `${labelColumn.name} 값을 임시 범주로 묶어 ${firstNumber.name} 비중을 살펴봅니다.`,
+          categoryKey: labelColumn.name,
           valueKey: firstNumber.name,
         }
+      : firstNumber
+        ? {
+            id: 'pie',
+            title: '파이 차트',
+            status: 'warning',
+            reason: '범주 컬럼은 없지만 행 순서별 숫자 비중을 임시로 표시합니다.',
+            valueKey: firstNumber.name,
+          }
       : {
           id: 'pie',
           title: '파이 차트',
           status: 'placeholder',
-          reason: '범주형 컬럼 1개와 숫자형 컬럼 1개가 필요합니다.',
+          reason: '숫자형 컬럼 1개 이상이 필요합니다.',
         },
     dateColumn && firstNumber
       ? {
@@ -101,6 +131,14 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           xKey: dateColumn.name,
           yKey: firstNumber.name,
         }
+      : firstNumber
+        ? {
+            id: 'area',
+            title: '영역 차트',
+            status: 'warning',
+            reason: '날짜 컬럼은 없지만 행 순서 흐름으로 숫자 값의 변화를 채워 표시합니다.',
+            yKey: firstNumber.name,
+          }
       : {
           id: 'area',
           title: '영역 차트',

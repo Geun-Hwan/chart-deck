@@ -76,6 +76,18 @@ test('CSV 텍스트 붙여넣기 흐름도 로컬 입력으로 선 차트를 추
   await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(3);
 });
 
+test('숫자만 있는 데이터도 부족 상태로 버리지 않고 행 순서 차트로 보여준다', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /CSV 텍스트 붙여넣기 열기/ }).click();
+  await page.getByRole('textbox', { name: 'CSV 텍스트' }).fill('score\n10\n25\n15\n40');
+
+  await expect(page.getByRole('heading', { name: '이 데이터로 무엇을 볼까요?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '막대 차트' }).first()).toBeVisible();
+  await expect(page.getByText('행 순서 기준으로 숫자 값을 비교합니다.').first()).toBeVisible();
+  await expect(page.getByRole('img', { name: '막대 차트 시각화, 4개 지점' })).toBeVisible();
+});
+
 test('대량 CSV는 차트 지점을 샘플링해 렌더링한다', async ({ page }) => {
   await page.goto('/');
 

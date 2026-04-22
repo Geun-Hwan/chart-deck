@@ -52,4 +52,23 @@ describe('chartCandidates', () => {
     expect(candidates[0]?.id).toBe('line');
   });
 
+  it('숫자 컬럼만 있어도 행 순서 기반 후보를 경고 상태로 렌더링 가능하게 만든다', () => {
+    const candidates = buildChartCandidates([
+      { name: 'score', type: 'number', nonEmptyCount: 3, uniqueCount: 3, confidence: 1, examples: ['10'] },
+    ]);
+    expect(candidates.find((candidate) => candidate.id === 'bar')).toMatchObject({ status: 'warning', valueKey: 'score' });
+    expect(candidates.find((candidate) => candidate.id === 'line')).toMatchObject({ status: 'warning', yKey: 'score' });
+    expect(candidates.find((candidate) => candidate.id === 'area')).toMatchObject({ status: 'warning', yKey: 'score' });
+    expect(candidates.find((candidate) => candidate.id === 'scatter')?.status).toBe('placeholder');
+  });
+
+  it('unknown 텍스트 컬럼도 임시 라벨로 사용해 차트 후보를 줄이지 않는다', () => {
+    const candidates = buildChartCandidates([
+      { name: 'name', type: 'unknown', nonEmptyCount: 3, uniqueCount: 3, confidence: 0.4, examples: ['alpha'] },
+      { name: 'score', type: 'number', nonEmptyCount: 3, uniqueCount: 3, confidence: 1, examples: ['10'] },
+    ]);
+    expect(candidates.find((candidate) => candidate.id === 'bar')).toMatchObject({ status: 'warning', categoryKey: 'name', valueKey: 'score' });
+    expect(candidates.find((candidate) => candidate.id === 'pie')).toMatchObject({ status: 'warning', categoryKey: 'name', valueKey: 'score' });
+  });
+
 });

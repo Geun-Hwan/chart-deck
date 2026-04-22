@@ -26,6 +26,15 @@ describe('parseDelimitedText', () => {
     expect(result.ok).toBe(false);
   });
 
+  it('단일 숫자 컬럼도 행 순서 차트용으로 파싱한다', () => {
+    const result = parseDelimitedText('score\n10\n25\n15');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.columns).toEqual(['score']);
+    expect(result.data.rows.map((row) => row.score)).toEqual([10, 25, 15]);
+    expect(result.warnings).toContain('단일 컬럼 데이터는 행 순서를 임시 라벨로 사용해 차트를 표시합니다.');
+  });
+
   it('행 수 제한을 초과하면 파싱하지 않는다', () => {
     const result = parseDelimitedText(oversized);
     expect(result.ok).toBe(false);

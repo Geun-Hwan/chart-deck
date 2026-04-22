@@ -61,12 +61,15 @@ export function parseDelimitedText(text: string): ParseResult {
   }
 
   const columns = normalizeHeader(splitSimpleLine(firstLine, delimiter));
-  if (columns.length < 2) {
+  if (columns.length < 1) {
     return {
       ok: false,
-      error: '최소 2개 이상의 컬럼이 필요합니다.',
+      error: '최소 1개 이상의 컬럼이 필요합니다.',
       warnings,
     };
+  }
+  if (columns.length === 1) {
+    warnings.push('단일 컬럼 데이터는 행 순서를 임시 라벨로 사용해 차트를 표시합니다.');
   }
 
   const rows: DataRow[] = [];

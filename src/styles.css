@@ -141,7 +141,7 @@ input[type='file']::file-selector-button {
 .mission-copy {
   position: relative;
   overflow: hidden;
-  padding: 30px;
+  padding: 24px 28px;
 }
 
 .mission-copy::after {
@@ -170,7 +170,7 @@ input[type='file']::file-selector-button {
   margin: 12px 0 16px;
   max-width: 12ch;
   font-family: 'Fraunces', Georgia, serif;
-  font-size: clamp(2.8rem, 5vw, 5.8rem);
+  font-size: clamp(2.7rem, 4.4vw, 5rem);
   line-height: 0.9;
   letter-spacing: -0.06em;
 }
@@ -260,7 +260,7 @@ input[type='file']::file-selector-button {
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  padding: 14px;
+  padding: 12px;
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(202, 255, 79, 0.12);
@@ -286,7 +286,7 @@ input[type='file']::file-selector-button {
 
 .input-heading h2 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.26rem;
   letter-spacing: -0.04em;
 }
 
@@ -316,7 +316,7 @@ input[type='file']::file-selector-button {
   display: grid;
   align-content: start;
   gap: 6px;
-  min-height: 112px;
+  min-height: 104px;
   padding: 14px;
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.04);
@@ -751,8 +751,34 @@ textarea::placeholder {
   gap: 12px;
   margin-top: 18px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding: 0 44px 12px 0;
   scroll-snap-type: x proximity;
+  scrollbar-color: rgba(202, 255, 79, 0.5) rgba(255, 255, 255, 0.08);
+  scrollbar-width: thin;
+}
+
+.choice-strip::-webkit-scrollbar {
+  height: 10px;
+}
+
+.choice-strip::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.choice-strip::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(202, 255, 79, 0.75), rgba(125, 211, 252, 0.75));
+}
+
+.choice-scroll-hint {
+  position: relative;
+  z-index: 1;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: right;
 }
 
 .choice-chip {

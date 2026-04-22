@@ -61,6 +61,7 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
           );
         })}
       </div>
+      <p className="choice-scroll-hint">후보가 잘리면 가로로 넘겨 다른 관점을 계속 확인하세요.</p>
     </section>
   );
 }
