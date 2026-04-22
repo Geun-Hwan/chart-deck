@@ -110,7 +110,7 @@ export function App() {
         <div className="stage-topline">
           <div>
             <span>지금 보는 데이터</span>
-            <strong>{sourceLabel}</strong>
+            <strong aria-live="polite">{sourceLabel}</strong>
           </div>
           <p>로컬 브라우저 처리 · 서버 업로드 없음 · 1MB/5,000행 제한</p>
         </div>
@@ -138,7 +138,7 @@ export function App() {
 
 function Alert({ tone, title, messages }: { tone: 'danger' | 'warning'; title: string; messages: string[] }) {
   return (
-    <section className={`alert alert-${tone}`} role="status">
+    <section className={`alert alert-${tone}`} role={tone === 'danger' ? 'alert' : 'status'} aria-atomic="true">
       <strong>{title}</strong>
       <ul>
         {messages.map((message) => (

@@ -53,12 +53,18 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
         <input type="file" accept=".csv,text/csv,text/plain" onChange={handleFileChange} />
       </label>
 
-      <button type="button" className="paste-toggle" aria-expanded={isPasteOpen} onClick={() => setIsPasteOpen((value) => !value)}>
+      <button
+        type="button"
+        className="paste-toggle"
+        aria-expanded={isPasteOpen}
+        aria-controls="csv-paste-panel"
+        onClick={() => setIsPasteOpen((value) => !value)}
+      >
         CSV 텍스트 붙여넣기 {isPasteOpen ? '닫기' : '열기'}
       </button>
 
       {isPasteOpen ? (
-        <label className="text-input paste-panel">
+        <label id="csv-paste-panel" className="text-input paste-panel">
           <span>CSV 텍스트</span>
           <textarea
             value={inputText}

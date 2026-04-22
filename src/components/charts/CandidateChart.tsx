@@ -34,7 +34,8 @@ export function CandidateChart({ candidate, rows }: Props) {
 }
 
 function renderChart(candidate: ChartCandidate, rows: DataRow[]) {
-  const allPoints = toPoints(candidate, rows, candidate.id === 'scatter');
+  const rawPoints = toPoints(candidate, rows, candidate.id === 'scatter');
+  const allPoints = shouldAggregateCategoryPoints(candidate) ? aggregatePointsByLabel(rawPoints) : rawPoints;
   const sampled = sampleChartPoints(allPoints);
   const points = sampled.points;
 
@@ -89,6 +90,23 @@ function toPoints(candidate: ChartCandidate, rows: DataRow[], useNumericX = fals
     .filter((point): point is Point => point !== null);
 }
 
+function shouldAggregateCategoryPoints(candidate: ChartCandidate): boolean {
+  return Boolean(candidate.categoryKey && (candidate.id === 'bar' || candidate.id === 'pie'));
+}
+
+function aggregatePointsByLabel(points: Point[]): Point[] {
+  const totals = new Map<string, Point>();
+  for (const point of points) {
+    const current = totals.get(point.label);
+    if (!current) {
+      totals.set(point.label, { ...point });
+      continue;
+    }
+    current.value += point.value;
+  }
+  return [...totals.values()];
+}
+
 function toNumber(value: DataValue): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string') {
@@ -117,7 +135,7 @@ function BarSvg({ points }: { points: Point[] }) {
   const barWidth = (width - 80 - gap * (points.length - 1)) / points.length;
 
   return (
-    <svg className="native-chart" data-testid="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="막대 차트 시각화">
+    <svg className="native-chart" data-testid="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`막대 차트 시각화, ${points.length}개 지점`}>
       <Grid width={width} height={height} />
       {points.map((point, index) => {
         const barHeight = scale(point.value, 0, max, 18, 190);
@@ -146,7 +164,13 @@ function LineSvg({ points, area }: { points: Point[]; area: boolean }) {
   const areaPath = `${path} L ${coordinates.at(-1)?.x ?? 48} ${height - 42} L ${coordinates[0]?.x ?? 48} ${height - 42} Z`;
 
   return (
-    <svg className="native-chart" data-testid="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={area ? '영역 차트 시각화' : '선 차트 시각화'}>
+    <svg
+      className="native-chart"
+      data-testid="chart-svg"
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label={`${area ? '영역 차트' : '선 차트'} 시각화, ${points.length}개 지점`}
+    >
       <Grid width={width} height={height} />
       {area ? <path d={areaPath} fill="rgba(96, 165, 250, 0.22)" /> : null}
       <path d={path} fill="none" stroke="#2563eb" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
@@ -168,7 +192,7 @@ function ScatterSvg({ points }: { points: Point[] }) {
   const minX = Math.min(...xValues);
   const maxX = Math.max(...xValues);
   return (
-    <svg className="native-chart" data-testid="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="산점도 시각화">
+    <svg className="native-chart" data-testid="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`산점도 시각화, ${points.length}개 지점`}>
       <Grid width={width} height={height} />
       {points.map((point, index) => (
         <circle
@@ -192,7 +216,7 @@ function PieSvg({ points }: { points: Point[] }) {
   let cursor = -90;
 
   return (
-    <svg className="native-chart" data-testid="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="파이 차트 시각화">
+    <svg className="native-chart" data-testid="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`파이 차트 시각화, ${points.length}개 지점`}>
       <circle cx="180" cy="140" r="96" fill="#f8fafc" />
       {points.map((point, index) => {
         const angle = (Math.max(point.value, 0) / total) * 360;

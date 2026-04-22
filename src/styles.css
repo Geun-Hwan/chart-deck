@@ -15,6 +15,10 @@
 body { margin: 0; min-width: 320px; }
 button, textarea, input { font: inherit; }
 button { cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 4px solid rgba(37, 99, 235, 0.34);
+  outline-offset: 3px;
+}
 
 .studio-shell {
   min-height: 100vh;
@@ -111,9 +115,11 @@ textarea { min-height: 230px; resize: vertical; border: 1px solid rgba(255, 255,
 .choice-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 0 28px 28px; }
 .choice-chip { border: 1px solid var(--line); border-radius: 24px; background: #fff; padding: 15px; text-align: left; min-height: 96px; }
 .choice-chip:hover { border-color: var(--blue); transform: translateY(-1px); }
-.choice-chip span, .choice-chip strong { display: block; }
+.choice-chip.is-selected { border-color: #101827; box-shadow: inset 0 0 0 2px #101827, 0 12px 26px rgba(15, 23, 42, 0.12); }
+.choice-chip span, .choice-chip strong, .choice-chip em { display: block; }
 .choice-chip span { color: var(--muted); font-size: 0.78rem; font-weight: 900; }
 .choice-chip strong { margin-top: 8px; font-size: 1.08rem; }
+.choice-chip em { margin-top: 10px; color: var(--blue); font-size: 0.78rem; font-style: normal; font-weight: 950; }
 
 
 .native-chart {
