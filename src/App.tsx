@@ -90,13 +90,12 @@ export function App() {
 
   return (
     <main className="observatory-shell">
-      <header className="mission-header" aria-label="차트 데크 관제 브리핑">
+      <header className="mission-header" aria-label="차트 비교 작업 영역">
         <div className="mission-copy">
           <p className="eyebrow">Chart Deck Lab</p>
-          <h1>데이터 궤도를 여는 차트 관측소</h1>
+          <h1>데이터에 맞는 차트를 빠르게 비교하세요</h1>
           <p>
-            표를 올리면 관측 가능한 궤도부터 띄웁니다. 부족한 데이터도 버리지 않고, 가능한 시야와
-            보완 신호를 함께 보여줍니다.
+            샘플이나 CSV를 넣으면 여러 차트 후보를 한 화면에서 비교하고, 지금 데이터에 가장 어울리는 차트를 고를 수 있습니다.
           </p>
           <div className="mission-signals" aria-label="핵심 운영 지표">
             <span>브라우저 로컬 처리</span>
@@ -107,12 +106,35 @@ export function App() {
 
         <div className="mission-panel">
           <div className="mission-panel__source">
-            <span>현재 관측 좌표</span>
+            <span>현재 데이터</span>
             <strong aria-live="polite">{sourceLabel}</strong>
           </div>
-          <p>중앙 무대는 주 시야, 주변 패널은 보조 신호입니다. 데이터 밀도가 바뀌어도 관측 흐름은 유지됩니다.</p>
+          <p>차트 후보를 먼저 비교하고, 필요한 컬럼 정보와 미리보기는 옆에서 확인하세요.</p>
         </div>
       </header>
+
+      <section className="operation-grid" aria-label="시각화 운영 영역">
+        <section className="visual-stage" aria-label="시각화 결과 영역">
+          <ChartGrid
+            candidates={parsed.data ? candidates : []}
+            rows={parsed.data?.rows ?? []}
+            selectedId={selectedChartId ?? preferredChartId}
+            onSelect={setSelectedChartId}
+          />
+        </section>
+
+        <div className="telemetry-stack">
+          <SummaryDashboard summary={summary} sourceLabel={sourceLabel} />
+
+          {activeError ? <Alert tone="danger" title="입력을 확인해주세요" messages={[activeError]} /> : null}
+          {activeWarnings.length > 0 ? <Alert tone="warning" title="데이터 해석 안내" messages={[...new Set(activeWarnings)]} /> : null}
+        </div>
+
+        <aside className="forensics-stack" aria-label="컬럼 및 미리보기">
+          <ColumnSummary profiles={profiles} />
+          <DataPreview data={parsed.data} />
+        </aside>
+      </section>
 
       <section className="control-deck" aria-label="데이터 주입 콘솔">
         <DataInputPanel
@@ -123,29 +145,6 @@ export function App() {
           onError={setParseError}
           onClear={handleClear}
         />
-      </section>
-
-      <section className="operation-grid" aria-label="시각화 운영 영역">
-        <div className="telemetry-stack">
-          <SummaryDashboard summary={summary} sourceLabel={sourceLabel} />
-
-          {activeError ? <Alert tone="danger" title="입력을 확인해주세요" messages={[activeError]} /> : null}
-          {activeWarnings.length > 0 ? <Alert tone="warning" title="데이터 해석 안내" messages={[...new Set(activeWarnings)]} /> : null}
-        </div>
-
-        <section className="visual-stage" aria-label="시각화 결과 영역">
-          <ChartGrid
-            candidates={parsed.data ? candidates : []}
-            rows={parsed.data?.rows ?? []}
-            selectedId={selectedChartId ?? preferredChartId}
-            onSelect={setSelectedChartId}
-          />
-        </section>
-
-        <aside className="forensics-stack" aria-label="컬럼 및 미리보기">
-          <ColumnSummary profiles={profiles} />
-          <DataPreview data={parsed.data} />
-        </aside>
       </section>
     </main>
   );
