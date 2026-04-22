@@ -10,7 +10,6 @@ type Props = {
 type Point = {
   label: string;
   x: number;
-  y: number;
   value: number;
 };
 
@@ -35,7 +34,7 @@ export function CandidateChart({ candidate, rows }: Props) {
 }
 
 function renderChart(candidate: ChartCandidate, rows: DataRow[]) {
-  const allPoints = toPoints(candidate, rows);
+  const allPoints = toPoints(candidate, rows, candidate.id === 'scatter');
   const sampled = sampleChartPoints(allPoints);
   const points = sampled.points;
 
@@ -70,7 +69,7 @@ function renderChart(candidate: ChartCandidate, rows: DataRow[]) {
   );
 }
 
-function toPoints(candidate: ChartCandidate, rows: DataRow[]): Point[] {
+function toPoints(candidate: ChartCandidate, rows: DataRow[], useNumericX = false): Point[] {
   const xKey = candidate.xKey ?? candidate.categoryKey;
   const yKey = candidate.yKey ?? candidate.valueKey;
   if (!yKey) return [];
@@ -79,10 +78,11 @@ function toPoints(candidate: ChartCandidate, rows: DataRow[]): Point[] {
     .map((row, index) => {
       const value = toNumber(row[yKey]);
       if (value === null) return null;
+      const xValue = useNumericX && xKey ? toNumber(row[xKey]) : null;
+      if (useNumericX && xValue === null) return null;
       return {
         label: xKey ? String(row[xKey] ?? index + 1) : String(index + 1),
-        x: index,
-        y: value,
+        x: xValue ?? index,
         value,
       };
     })
@@ -164,13 +164,16 @@ function ScatterSvg({ points }: { points: Point[] }) {
   const width = 640;
   const height = 280;
   const { min, max } = bounds(points);
+  const xValues = points.map((point) => point.x);
+  const minX = Math.min(...xValues);
+  const maxX = Math.max(...xValues);
   return (
     <svg className="native-chart" data-testid="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="산점도 시각화">
       <Grid width={width} height={height} />
       {points.map((point, index) => (
         <circle
           key={`${point.label}-${index}`}
-          cx={scale(index, 0, Math.max(points.length - 1, 1), 48, width - 44)}
+          cx={scale(point.x, minX, maxX, 48, width - 44)}
           cy={scale(point.value, min, max, height - 44, 36)}
           r={10 + (index % 3) * 3}
           fill={palette[index % palette.length]}

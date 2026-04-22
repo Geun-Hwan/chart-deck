@@ -46,12 +46,44 @@ test('CSV 파일 선택과 데이터 비우기가 실제로 동작한다', async
   await expect(page.getByRole('heading', { name: '아직 차트를 고를 데이터가 없습니다' })).toBeVisible();
 });
 
+test('CSV 텍스트 붙여넣기 흐름도 로컬 입력으로 선 차트를 추천한다', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.getByText('로컬 브라우저 처리 · 서버 업로드 없음 · 1MB/5,000행 제한')).toBeVisible();
+  await page.getByRole('button', { name: /CSV 텍스트 붙여넣기 열기/ }).click();
+  await page.getByLabel('CSV 텍스트').fill('day,value,group\n2026-01-01,10,A\n2026-01-02,15,A\n2026-01-03,13,B');
+
+  await expect(page.locator('.stage-topline strong')).toHaveText('직접 붙여넣은 CSV');
+  await expect(page.getByRole('heading', { name: '이 데이터로 무엇을 볼까요?' })).toBeVisible();
+  await expect(page.getByText('지금 가장 먼저 볼 차트')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '선 차트' }).first()).toBeVisible();
+  await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(3);
+});
 
 test('대량 CSV는 차트 지점을 샘플링해 렌더링한다', async ({ page }) => {
   await page.goto('/');
 
   await page.getByLabel('내 CSV 파일 열기').setInputFiles(largeCsvPath);
   await expect(page.locator('.stage-topline strong')).toHaveText('내 CSV · large-timeseries.csv');
+  await expect(page.getByText('지금 가장 먼저 볼 차트')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '선 차트' }).first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first()).toBeVisible();
   await expect(page.getByTestId('sampling-note').first()).toContainText('120개 중 36개');
+});
+
+test('산점도는 행 순서가 아니라 첫 번째 숫자 컬럼을 x축으로 사용한다', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /CSV 텍스트 붙여넣기 열기/ }).click();
+  await page.getByLabel('CSV 텍스트').fill('x,y,group\n100,1,A\n0,5,B\n50,3,C');
+
+  await expect(page.getByRole('heading', { name: '산점도' }).first()).toBeVisible();
+  const circles = page.getByTestId('chart-svg').first().locator('circle');
+  await expect(circles).toHaveCount(3);
+
+  const firstCx = Number(await circles.nth(0).getAttribute('cx'));
+  const secondCx = Number(await circles.nth(1).getAttribute('cx'));
+  const thirdCx = Number(await circles.nth(2).getAttribute('cx'));
+  expect(firstCx).toBeGreaterThan(thirdCx);
+  expect(thirdCx).toBeGreaterThan(secondCx);
 });
