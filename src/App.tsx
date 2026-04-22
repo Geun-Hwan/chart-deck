@@ -89,13 +89,32 @@ export function App() {
   }
 
   return (
-    <main className="studio-shell">
-      <aside className="studio-rail" aria-label="데이터 입력 패널">
-        <header className="brand-block">
+    <main className="observatory-shell">
+      <header className="mission-header" aria-label="차트 데크 관제 브리핑">
+        <div className="mission-copy">
           <p className="eyebrow">Chart Deck Lab</p>
           <h1>CSV를 차트 감각으로 바꾸는 실험실</h1>
-          <p>한 번에 모든 걸 보여주지 않습니다. 먼저 데이터를 읽고, 가장 말이 되는 차트부터 보여줍니다.</p>
-        </header>
+          <p>
+            한 번에 모든 걸 보여주지 않습니다. 먼저 데이터를 해석하고, 지금 가장 말이 되는 차트와 함께
+            다음 관점을 제안합니다.
+          </p>
+          <div className="mission-signals" aria-label="핵심 운영 지표">
+            <span>브라우저 로컬 처리</span>
+            <span>서버 업로드 없음</span>
+            <span>1MB · 5,000행 제한</span>
+          </div>
+        </div>
+
+        <div className="mission-panel">
+          <div className="mission-panel__source">
+            <span>지금 보는 데이터</span>
+            <strong aria-live="polite">{sourceLabel}</strong>
+          </div>
+          <p>선택된 차트는 중앙 무대에서 유지되고, 나머지 패널은 보조 관측값으로 분리됩니다.</p>
+        </div>
+      </header>
+
+      <section className="control-deck" aria-label="데이터 주입 콘솔">
         <DataInputPanel
           inputText={inputText}
           onTextChange={handleTextChange}
@@ -104,33 +123,29 @@ export function App() {
           onError={setParseError}
           onClear={handleClear}
         />
-      </aside>
+      </section>
 
-      <section className="studio-stage" aria-label="시각화 결과 영역">
-        <div className="stage-topline">
-          <div>
-            <span>지금 보는 데이터</span>
-            <strong aria-live="polite">{sourceLabel}</strong>
-          </div>
-          <p>로컬 브라우저 처리 · 서버 업로드 없음 · 1MB/5,000행 제한</p>
+      <section className="operation-grid" aria-label="시각화 운영 영역">
+        <div className="telemetry-stack">
+          <SummaryDashboard summary={summary} sourceLabel={sourceLabel} />
+
+          {activeError ? <Alert tone="danger" title="입력을 확인해주세요" messages={[activeError]} /> : null}
+          {activeWarnings.length > 0 ? <Alert tone="warning" title="데이터 해석 안내" messages={[...new Set(activeWarnings)]} /> : null}
         </div>
 
-        <SummaryDashboard summary={summary} sourceLabel={sourceLabel} />
+        <section className="visual-stage" aria-label="시각화 결과 영역">
+          <ChartGrid
+            candidates={parsed.data ? candidates : []}
+            rows={parsed.data?.rows ?? []}
+            selectedId={selectedChartId ?? preferredChartId}
+            onSelect={setSelectedChartId}
+          />
+        </section>
 
-        {activeError ? <Alert tone="danger" title="입력을 확인해주세요" messages={[activeError]} /> : null}
-        {activeWarnings.length > 0 ? <Alert tone="warning" title="데이터 해석 안내" messages={[...new Set(activeWarnings)]} /> : null}
-
-        <ChartGrid
-          candidates={parsed.data ? candidates : []}
-          rows={parsed.data?.rows ?? []}
-          selectedId={selectedChartId ?? preferredChartId}
-          onSelect={setSelectedChartId}
-        />
-
-        <div className="evidence-drawer">
+        <aside className="forensics-stack" aria-label="컬럼 및 미리보기">
           <ColumnSummary profiles={profiles} />
           <DataPreview data={parsed.data} />
-        </div>
+        </aside>
       </section>
     </main>
   );

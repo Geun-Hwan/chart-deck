@@ -1,5 +1,5 @@
 import type { ChangeEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SampleDataset } from '../data/sampleData';
 import { sampleDatasets } from '../data/sampleData';
 import { readTextFile } from '../lib/fileInput';
@@ -15,6 +15,18 @@ type Props = {
 
 export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileText, onError, onClear }: Props) {
   const [isPasteOpen, setIsPasteOpen] = useState(false);
+  const pasteToggleRef = useRef<HTMLButtonElement>(null);
+  const pasteTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const wasPasteOpenRef = useRef(false);
+
+  useEffect(() => {
+    if (isPasteOpen) {
+      pasteTextareaRef.current?.focus();
+    } else if (wasPasteOpenRef.current) {
+      pasteToggleRef.current?.focus();
+    }
+    wasPasteOpenRef.current = isPasteOpen;
+  }, [isPasteOpen]);
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -47,37 +59,42 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
         ))}
       </div>
 
-      <label className="file-action">
-        <span>내 CSV 파일 열기</span>
-        <small>업로드가 아니라 브라우저 안에서만 읽습니다.</small>
-        <input type="file" accept=".csv,text/csv,text/plain" onChange={handleFileChange} />
-      </label>
-
-      <button
-        type="button"
-        className="paste-toggle"
-        aria-expanded={isPasteOpen}
-        aria-controls="csv-paste-panel"
-        onClick={() => setIsPasteOpen((value) => !value)}
-      >
-        CSV 텍스트 붙여넣기 {isPasteOpen ? '닫기' : '열기'}
-      </button>
-
-      {isPasteOpen ? (
-        <label id="csv-paste-panel" className="text-input paste-panel">
-          <span>CSV 텍스트</span>
-          <textarea
-            value={inputText}
-            onChange={(event) => onTextChange(event.target.value)}
-            spellCheck={false}
-            placeholder="month,revenue\n2026-01-01,1200000"
-          />
+      <div className="input-actions">
+        <label className="file-action">
+          <span>내 CSV 파일 열기</span>
+          <small>업로드가 아니라 브라우저 안에서만 읽습니다.</small>
+          <input type="file" accept=".csv,text/csv,text/plain" onChange={handleFileChange} />
         </label>
-      ) : null}
 
-      <button type="button" className="clear-button" onClick={onClear} disabled={inputText.trim().length === 0}>
-        데이터 비우기
-      </button>
+        <button
+          type="button"
+          className="paste-toggle"
+          aria-expanded={isPasteOpen}
+          aria-controls="csv-paste-panel"
+          ref={pasteToggleRef}
+          onClick={() => setIsPasteOpen((value) => !value)}
+        >
+          CSV 텍스트 붙여넣기 {isPasteOpen ? '닫기' : '열기'}
+        </button>
+
+        {isPasteOpen ? (
+          <div id="csv-paste-panel" className="text-input paste-panel" role="region" aria-labelledby="csv-paste-label">
+            <label id="csv-paste-label" htmlFor="csv-textarea">CSV 텍스트</label>
+            <textarea
+              id="csv-textarea"
+              ref={pasteTextareaRef}
+              value={inputText}
+              onChange={(event) => onTextChange(event.target.value)}
+              spellCheck={false}
+              placeholder="month,revenue\n2026-01-01,1200000"
+            />
+          </div>
+        ) : null}
+
+        <button type="button" className="clear-button" onClick={onClear} disabled={inputText.trim().length === 0}>
+          데이터 비우기
+        </button>
+      </div>
     </section>
   );
 }
