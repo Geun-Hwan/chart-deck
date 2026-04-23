@@ -1,6 +1,6 @@
-import { type CSSProperties, useMemo, useState } from 'react';
+import { type WheelEvent, useMemo, useState } from 'react';
 import { sampleChartPoints } from '../../lib/chartSampling';
-import { chartZoomLevels, formatChartZoomLevel, getNextChartZoomIndex } from '../../lib/chartZoom';
+import { applyChartZoomWindow, chartZoomLevels, formatChartZoomLevel, getNextChartZoomIndex } from '../../lib/chartZoom';
 import {
   CHART_POINT_WINDOW_SIZE,
   applyChartPointWindow,
@@ -67,9 +67,9 @@ function renderChart(
   chartZoomIndex: number,
   onChartZoomIndexChange: (index: number) => void,
 ) {
-  const sampled = sampleChartPoints(visiblePoints);
+  const zoomed = applyChartZoomWindow(visiblePoints, chartZoomIndex);
+  const sampled = sampleChartPoints(zoomed.points);
   const points = sampled.points;
-  const chartZoomLevel = chartZoomLevels[chartZoomIndex] ?? chartZoomLevels[0];
 
   if (points.length === 0) {
     return <WarningPlaceholder status="warning" reason="표시할 수 있는 숫자 값이 부족합니다." />;
@@ -93,7 +93,7 @@ function renderChart(
   return (
     <div className="chart-render-frame">
       <div className="chart-control-row">
-        <ChartZoomToolbar activeIndex={chartZoomIndex} onChange={onChartZoomIndexChange} />
+        <ChartZoomStatus activeIndex={chartZoomIndex} />
         {prepared.allPointCount > CHART_POINT_WINDOW_SIZE ? (
           <ChartWindowToolbar activeMode={prepared.mode} onChange={onWindowModeChange} />
         ) : null}
@@ -103,17 +103,25 @@ function renderChart(
           {prepared.allPointCount.toLocaleString('ko-KR')}개 중 {prepared.note}
         </p>
       ) : null}
+      {zoomed.isZoomed ? (
+        <p className="chart-zoom-note" data-testid="chart-zoom-note">
+          휠 줌: {zoomed.originalCount.toLocaleString('ko-KR')}개 중 최근 {zoomed.visibleCount.toLocaleString('ko-KR')}개 데이터를 표시합니다.
+        </p>
+      ) : null}
       {sampled.isSampled ? (
         <p className="sampling-note" data-testid="sampling-note">
           {sampled.originalCount.toLocaleString('ko-KR')}개 중 {sampled.sampledCount.toLocaleString('ko-KR')}개 지점을 균등 샘플링해 표시합니다.
         </p>
       ) : null}
-      <div className="chart-zoom-viewport" data-testid="chart-zoom-viewport">
-        <div
-          className="chart-zoom-surface"
-          data-testid="chart-zoom-surface"
-          style={{ width: formatChartZoomLevel(chartZoomLevel) } as CSSProperties}
-        >
+      <div
+        className="chart-zoom-viewport"
+        data-testid="chart-zoom-viewport"
+        role="application"
+        aria-label="마우스 휠로 차트 데이터 범위 확대 또는 축소"
+        tabIndex={0}
+        onWheel={(event) => handleChartWheel(event, chartZoomIndex, onChartZoomIndexChange)}
+      >
+        <div className="chart-zoom-surface" data-testid="chart-zoom-surface">
           {chart}
         </div>
       </div>
@@ -121,33 +129,23 @@ function renderChart(
   );
 }
 
-function ChartZoomToolbar({
-  activeIndex,
-  onChange,
-}: {
-  activeIndex: number;
-  onChange: (index: number) => void;
-}) {
-  const zoomLevel = chartZoomLevels[activeIndex] ?? chartZoomLevels[0];
-  const isDefault = activeIndex === 0;
-  const isMax = activeIndex === chartZoomLevels.length - 1;
+function ChartZoomStatus({ activeIndex }: { activeIndex: number }) {
+  const zoomLevel = chartZoomLevels[activeIndex] ?? chartZoomLevels[0]!;
 
   return (
-    <div className="chart-zoom-toolbar" role="group" aria-label="메인 차트 확대/축소">
-      <button type="button" disabled={isDefault} onClick={() => onChange(getNextChartZoomIndex(activeIndex, 'out'))}>
-        줌 아웃
-      </button>
-      <output aria-label="현재 차트 배율" data-testid="chart-zoom-label">
+    <div className="chart-zoom-status" aria-label="차트 휠 줌 상태">
+      <span>마우스 휠로 데이터 범위 확대/축소</span>
+      <output aria-label="현재 차트 데이터 범위" data-testid="chart-zoom-label">
         {formatChartZoomLevel(zoomLevel)}
       </output>
-      <button type="button" disabled={isDefault} onClick={() => onChange(getNextChartZoomIndex(activeIndex, 'reset'))}>
-        원본
-      </button>
-      <button type="button" disabled={isMax} onClick={() => onChange(getNextChartZoomIndex(activeIndex, 'in'))}>
-        줌 인
-      </button>
     </div>
   );
+}
+
+function handleChartWheel(event: WheelEvent<HTMLDivElement>, activeIndex: number, onChange: (index: number) => void) {
+  if (Math.abs(event.deltaY) < 2) return;
+  event.preventDefault();
+  onChange(getNextChartZoomIndex(activeIndex, event.deltaY < 0 ? 'in' : 'out'));
 }
 
 function ChartWindowToolbar({

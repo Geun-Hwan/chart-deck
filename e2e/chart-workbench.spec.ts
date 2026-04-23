@@ -139,23 +139,28 @@ test('대량 차트는 최근 보기와 상위값 필터로 표시 범위를 좁
   await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(12);
 });
 
-test('대량 차트는 별도 줌 인과 줌 아웃으로 메인 차트 배율을 조절한다', async ({ page }) => {
+test('대량 차트는 마우스 휠로 데이터 표시 범위를 확대하고 되돌린다', async ({ page }) => {
   await page.goto('/');
 
   await page.getByLabel('CSV 파일 선택').setInputFiles(largeCsvPath);
-  const zoomGroup = page.getByRole('group', { name: '메인 차트 확대/축소' });
-  await expect(zoomGroup).toBeVisible();
-  await expect(page.getByTestId('chart-zoom-label')).toHaveText('100%');
-  await expect(zoomGroup.getByRole('button', { name: '줌 아웃' })).toBeDisabled();
+  const zoomViewport = page.getByTestId('chart-zoom-viewport');
+  await expect(zoomViewport).toBeVisible();
+  await expect(page.getByTestId('chart-zoom-label')).toHaveText('전체');
 
-  await zoomGroup.getByRole('button', { name: '줌 인' }).click();
-  await expect(page.getByTestId('chart-zoom-label')).toHaveText('125%');
-  await expect(page.getByTestId('chart-zoom-surface')).toHaveAttribute('style', /width: 125%;/);
-  await expect(zoomGroup.getByRole('button', { name: '줌 아웃' })).toBeEnabled();
+  await zoomViewport.hover();
+  await page.mouse.wheel(0, -500);
+  await expect(page.getByTestId('chart-zoom-label')).toHaveText('75%');
+  await expect(page.getByTestId('chart-zoom-note')).toContainText('120개 중 최근 90개');
 
-  await zoomGroup.getByRole('button', { name: '줌 아웃' }).click();
-  await expect(page.getByTestId('chart-zoom-label')).toHaveText('100%');
-  await expect(page.getByTestId('chart-zoom-surface')).toHaveAttribute('style', /width: 100%;/);
+  await page.mouse.wheel(0, -500);
+  await page.mouse.wheel(0, -500);
+  await expect(page.getByTestId('chart-zoom-label')).toHaveText('25%');
+  await expect(page.getByTestId('chart-zoom-note')).toContainText('120개 중 최근 30개');
+  await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(30);
+
+  await page.mouse.wheel(0, 500);
+  await expect(page.getByTestId('chart-zoom-label')).toHaveText('50%');
+  await expect(page.getByTestId('chart-zoom-note')).toContainText('120개 중 최근 60개');
 });
 
 test('산점도는 행 순서가 아니라 첫 번째 숫자 컬럼을 x축으로 사용한다', async ({ page }) => {
