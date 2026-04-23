@@ -1,6 +1,6 @@
-import { type WheelEvent, useMemo, useState } from 'react';
+import { type WheelEvent, useEffect, useMemo, useState } from 'react';
 import { sampleChartPoints } from '../../lib/chartSampling';
-import { applyChartZoomWindow, chartZoomLevels, formatChartZoomLevel, getNextChartZoomIndex } from '../../lib/chartZoom';
+import { applyChartZoomRange, formatChartZoomRange, getDefaultChartZoomRange, getNextChartZoomRange, type ChartZoomRange } from '../../lib/chartZoom';
 import {
   CHART_POINT_WINDOW_SIZE,
   applyChartPointWindow,
@@ -25,14 +25,18 @@ const palette = ['#b6f24a', '#60a5fa', '#fb7185', '#fbbf24', '#a78bfa', '#34d399
 
 export function CandidateChart({ candidate, rows }: Props) {
   const [windowMode, setWindowMode] = useState<ChartPointWindowMode>('all');
-  const [chartZoomIndex, setChartZoomIndex] = useState(0);
+  const [chartZoomRange, setChartZoomRange] = useState<ChartZoomRange | null>(null);
   const prepared = useMemo(() => preparePoints(candidate, rows, windowMode), [candidate, rows, windowMode]);
+
+  useEffect(() => {
+    setChartZoomRange(null);
+  }, [candidate.id, rows, windowMode]);
 
   if (candidate.status === 'placeholder' || candidate.status === 'error') {
     return <WarningPlaceholder status={candidate.status} reason={candidate.reason} />;
   }
 
-  const chart = renderChart(candidate, prepared.points, prepared, setWindowMode, chartZoomIndex, setChartZoomIndex);
+  const chart = renderChart(candidate, prepared.points, prepared, setWindowMode, chartZoomRange, setChartZoomRange);
   if (candidate.status === 'warning') {
     return (
       <div className="chart-with-warning">
@@ -64,10 +68,11 @@ function renderChart(
   visiblePoints: Point[],
   prepared: ReturnType<typeof preparePoints>,
   onWindowModeChange: (mode: ChartPointWindowMode) => void,
-  chartZoomIndex: number,
-  onChartZoomIndexChange: (index: number) => void,
+  chartZoomRange: ChartZoomRange | null,
+  onChartZoomRangeChange: (range: ChartZoomRange | null) => void,
 ) {
-  const zoomed = applyChartZoomWindow(visiblePoints, chartZoomIndex);
+  const activeZoomRange = chartZoomRange ?? getDefaultChartZoomRange(visiblePoints.length);
+  const zoomed = applyChartZoomRange(visiblePoints, activeZoomRange);
   const sampled = sampleChartPoints(zoomed.points);
   const points = sampled.points;
 
@@ -92,20 +97,14 @@ function renderChart(
 
   return (
     <div className="chart-render-frame">
-      <div className="chart-control-row">
-        <ChartZoomStatus activeIndex={chartZoomIndex} />
-        {prepared.allPointCount > CHART_POINT_WINDOW_SIZE ? (
+      {prepared.allPointCount > CHART_POINT_WINDOW_SIZE ? (
+        <div className="chart-control-row">
           <ChartWindowToolbar activeMode={prepared.mode} onChange={onWindowModeChange} />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
       {prepared.isWindowed ? (
         <p className="chart-filter-note" data-testid="chart-filter-note">
           {prepared.allPointCount.toLocaleString('ko-KR')}개 중 {prepared.note}
-        </p>
-      ) : null}
-      {zoomed.isZoomed ? (
-        <p className="chart-zoom-note" data-testid="chart-zoom-note">
-          휠 줌: {zoomed.originalCount.toLocaleString('ko-KR')}개 중 최근 {zoomed.visibleCount.toLocaleString('ko-KR')}개 데이터를 표시합니다.
         </p>
       ) : null}
       {sampled.isSampled ? (
@@ -119,8 +118,13 @@ function renderChart(
         role="application"
         aria-label="마우스 휠로 차트 데이터 범위 확대 또는 축소"
         tabIndex={0}
-        onWheel={(event) => handleChartWheel(event, chartZoomIndex, onChartZoomIndexChange)}
+        onWheel={(event) => handleChartWheel(event, activeZoomRange, visiblePoints.length, onChartZoomRangeChange)}
+        onDoubleClick={() => onChartZoomRangeChange(null)}
       >
+        <div className="chart-interaction-hint" data-testid="chart-zoom-label">
+          <span>휠로 데이터 범위 확대/축소 · 더블클릭 초기화</span>
+          <strong data-testid="chart-zoom-range">{formatChartZoomRange(zoomed.range, zoomed.originalCount)}</strong>
+        </div>
         <div className="chart-zoom-surface" data-testid="chart-zoom-surface">
           {chart}
         </div>
@@ -129,23 +133,19 @@ function renderChart(
   );
 }
 
-function ChartZoomStatus({ activeIndex }: { activeIndex: number }) {
-  const zoomLevel = chartZoomLevels[activeIndex] ?? chartZoomLevels[0]!;
-
-  return (
-    <div className="chart-zoom-status" aria-label="차트 휠 줌 상태">
-      <span>마우스 휠로 데이터 범위 확대/축소</span>
-      <output aria-label="현재 차트 데이터 범위" data-testid="chart-zoom-label">
-        {formatChartZoomLevel(zoomLevel)}
-      </output>
-    </div>
-  );
-}
-
-function handleChartWheel(event: WheelEvent<HTMLDivElement>, activeIndex: number, onChange: (index: number) => void) {
-  if (Math.abs(event.deltaY) < 2) return;
+function handleChartWheel(
+  event: WheelEvent<HTMLDivElement>,
+  activeRange: ChartZoomRange,
+  totalCount: number,
+  onChange: (range: ChartZoomRange | null) => void,
+) {
+  if (Math.abs(event.deltaY) < 2 || totalCount <= 0) return;
   event.preventDefault();
-  onChange(getNextChartZoomIndex(activeIndex, event.deltaY < 0 ? 'in' : 'out'));
+  const bounds = event.currentTarget.getBoundingClientRect();
+  const anchorRatio = bounds.width > 0 ? (event.clientX - bounds.left) / bounds.width : 0.5;
+  const nextRange = getNextChartZoomRange(activeRange, totalCount, event.deltaY < 0 ? 'in' : 'out', anchorRatio);
+  const isDefault = nextRange.start === 0 && nextRange.end === totalCount;
+  onChange(isDefault ? null : nextRange);
 }
 
 function ChartWindowToolbar({

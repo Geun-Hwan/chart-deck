@@ -1193,7 +1193,36 @@ th {
   color: #ffd7bc;
 }
 
+
+.chart-interaction-hint {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: grid;
+  gap: 4px;
+  max-width: min(320px, calc(100% - 28px));
+  padding: 9px 12px;
+  border: 1px solid rgba(247, 168, 108, 0.3);
+  border-radius: 16px;
+  background: rgba(8, 10, 16, 0.78);
+  color: #ffd7bc;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+  pointer-events: none;
+}
+
+.chart-interaction-hint span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.chart-interaction-hint strong {
+  font-size: 0.9rem;
+}
+
 .chart-zoom-viewport {
+  position: relative;
   overflow: hidden;
   overscroll-behavior: contain;
   border-radius: 18px;

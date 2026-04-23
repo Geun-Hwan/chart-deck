@@ -1,42 +1,66 @@
-export type ChartZoomAction = 'in' | 'out' | 'reset';
+export type ChartZoomDirection = 'in' | 'out';
 
-export type ChartZoomLevel = {
-  ratio: number;
-  label: string;
+export type ChartZoomRange = {
+  start: number;
+  end: number;
 };
 
-export const chartZoomLevels: ChartZoomLevel[] = [
-  { ratio: 1, label: '전체' },
-  { ratio: 0.75, label: '75%' },
-  { ratio: 0.5, label: '50%' },
-  { ratio: 0.25, label: '25%' },
-];
+export const MIN_ZOOM_POINT_COUNT = 5;
+const ZOOM_STEP_RATIO = 0.72;
 
-export function getNextChartZoomIndex(currentIndex: number, action: ChartZoomAction): number {
-  if (action === 'reset') return 0;
-
-  const lastIndex = chartZoomLevels.length - 1;
-  const nextIndex = action === 'in' ? currentIndex + 1 : currentIndex - 1;
-  return Math.min(Math.max(nextIndex, 0), lastIndex);
+export function getDefaultChartZoomRange(totalCount: number): ChartZoomRange {
+  return { start: 0, end: Math.max(0, totalCount) };
 }
 
-export function getVisiblePointCount(totalCount: number, zoomIndex: number, minimumCount = 5): number {
-  const level = chartZoomLevels[zoomIndex] ?? chartZoomLevels[0]!;
-  if (totalCount <= minimumCount || level.ratio >= 1) return totalCount;
-  return Math.min(totalCount, Math.max(minimumCount, Math.round(totalCount * level.ratio)));
+export function clampChartZoomRange(range: ChartZoomRange, totalCount: number, minimumCount = MIN_ZOOM_POINT_COUNT): ChartZoomRange {
+  const safeTotal = Math.max(0, totalCount);
+  if (safeTotal === 0) return { start: 0, end: 0 };
+
+  const safeMinimum = Math.min(safeTotal, minimumCount);
+  const requestedSize = Math.max(safeMinimum, Math.min(safeTotal, range.end - range.start));
+  const start = Math.max(0, Math.min(safeTotal - requestedSize, range.start));
+  return { start, end: start + requestedSize };
 }
 
-export function applyChartZoomWindow<T>(points: T[], zoomIndex: number): { points: T[]; originalCount: number; visibleCount: number; isZoomed: boolean } {
-  const visibleCount = getVisiblePointCount(points.length, zoomIndex);
+export function getNextChartZoomRange(
+  range: ChartZoomRange,
+  totalCount: number,
+  direction: ChartZoomDirection,
+  anchorRatio = 0.5,
+  minimumCount = MIN_ZOOM_POINT_COUNT,
+): ChartZoomRange {
+  const current = clampChartZoomRange(range, totalCount, minimumCount);
+  const currentSize = current.end - current.start;
+  if (currentSize <= 0) return current;
+
+  const targetSize =
+    direction === 'in'
+      ? Math.max(Math.min(totalCount, minimumCount), Math.round(currentSize * ZOOM_STEP_RATIO))
+      : Math.min(totalCount, Math.round(currentSize / ZOOM_STEP_RATIO));
+
+  if (direction === 'out' && targetSize >= totalCount - 1) return getDefaultChartZoomRange(totalCount);
+  if (targetSize === currentSize) return current;
+
+  const safeAnchorRatio = Math.max(0, Math.min(1, anchorRatio));
+  const anchorIndex = current.start + (currentSize - 1) * safeAnchorRatio;
+  const targetStart = Math.round(anchorIndex - (targetSize - 1) * safeAnchorRatio);
+
+  return clampChartZoomRange({ start: targetStart, end: targetStart + targetSize }, totalCount, minimumCount);
+}
+
+export function applyChartZoomRange<T>(points: T[], range: ChartZoomRange): { points: T[]; originalCount: number; range: ChartZoomRange; isZoomed: boolean } {
+  const safeRange = clampChartZoomRange(range, points.length);
   return {
-    points: points.slice(-visibleCount),
+    points: points.slice(safeRange.start, safeRange.end),
     originalCount: points.length,
-    visibleCount,
-    isZoomed: visibleCount < points.length,
+    range: safeRange,
+    isZoomed: safeRange.start > 0 || safeRange.end < points.length,
   };
 }
 
-export function formatChartZoomLevel(level: ChartZoomLevel | number): string {
-  if (typeof level === 'number') return `${Math.round(level * 100)}%`;
-  return level.label;
+export function formatChartZoomRange(range: ChartZoomRange, totalCount: number): string {
+  if (totalCount === 0) return '0 / 0';
+  const safeRange = clampChartZoomRange(range, totalCount);
+  if (safeRange.start === 0 && safeRange.end === totalCount) return `전체 ${totalCount.toLocaleString('ko-KR')}개`;
+  return `${(safeRange.start + 1).toLocaleString('ko-KR')}–${safeRange.end.toLocaleString('ko-KR')} / ${totalCount.toLocaleString('ko-KR')}`;
 }

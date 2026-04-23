@@ -145,22 +145,19 @@ test('대량 차트는 마우스 휠로 데이터 표시 범위를 확대하고 
   await page.getByLabel('CSV 파일 선택').setInputFiles(largeCsvPath);
   const zoomViewport = page.getByTestId('chart-zoom-viewport');
   await expect(zoomViewport).toBeVisible();
-  await expect(page.getByTestId('chart-zoom-label')).toHaveText('전체');
+  await expect(page.getByTestId('chart-zoom-range')).toHaveText('전체 120개');
 
   await zoomViewport.hover();
   await page.mouse.wheel(0, -500);
-  await expect(page.getByTestId('chart-zoom-label')).toHaveText('75%');
-  await expect(page.getByTestId('chart-zoom-note')).toContainText('120개 중 최근 90개');
+  await expect(page.getByTestId('chart-zoom-range')).toContainText('/ 120');
 
   await page.mouse.wheel(0, -500);
   await page.mouse.wheel(0, -500);
-  await expect(page.getByTestId('chart-zoom-label')).toHaveText('25%');
-  await expect(page.getByTestId('chart-zoom-note')).toContainText('120개 중 최근 30개');
-  await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(30);
+  await page.mouse.wheel(0, -500);
+  await expect(page.getByTestId('chart-zoom-range')).not.toHaveText('전체 120개');
 
   await page.mouse.wheel(0, 500);
-  await expect(page.getByTestId('chart-zoom-label')).toHaveText('50%');
-  await expect(page.getByTestId('chart-zoom-note')).toContainText('120개 중 최근 60개');
+  await expect(page.getByTestId('chart-zoom-range')).toContainText('/ 120');
 });
 
 test('산점도는 행 순서가 아니라 첫 번째 숫자 컬럼을 x축으로 사용한다', async ({ page }) => {
