@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { type CSSProperties, useMemo, useState } from 'react';
 import { sampleChartPoints } from '../../lib/chartSampling';
+import { chartZoomLevels, formatChartZoomLevel, getNextChartZoomIndex } from '../../lib/chartZoom';
 import {
   CHART_POINT_WINDOW_SIZE,
   applyChartPointWindow,
@@ -24,13 +25,14 @@ const palette = ['#b6f24a', '#60a5fa', '#fb7185', '#fbbf24', '#a78bfa', '#34d399
 
 export function CandidateChart({ candidate, rows }: Props) {
   const [windowMode, setWindowMode] = useState<ChartPointWindowMode>('all');
+  const [chartZoomIndex, setChartZoomIndex] = useState(0);
   const prepared = useMemo(() => preparePoints(candidate, rows, windowMode), [candidate, rows, windowMode]);
 
   if (candidate.status === 'placeholder' || candidate.status === 'error') {
     return <WarningPlaceholder status={candidate.status} reason={candidate.reason} />;
   }
 
-  const chart = renderChart(candidate, prepared.points, prepared, setWindowMode);
+  const chart = renderChart(candidate, prepared.points, prepared, setWindowMode, chartZoomIndex, setChartZoomIndex);
   if (candidate.status === 'warning') {
     return (
       <div className="chart-with-warning">
@@ -62,9 +64,12 @@ function renderChart(
   visiblePoints: Point[],
   prepared: ReturnType<typeof preparePoints>,
   onWindowModeChange: (mode: ChartPointWindowMode) => void,
+  chartZoomIndex: number,
+  onChartZoomIndexChange: (index: number) => void,
 ) {
   const sampled = sampleChartPoints(visiblePoints);
   const points = sampled.points;
+  const chartZoomLevel = chartZoomLevels[chartZoomIndex] ?? chartZoomLevels[0];
 
   if (points.length === 0) {
     return <WarningPlaceholder status="warning" reason="표시할 수 있는 숫자 값이 부족합니다." />;
@@ -87,9 +92,12 @@ function renderChart(
 
   return (
     <div className="chart-render-frame">
-      {prepared.allPointCount > CHART_POINT_WINDOW_SIZE ? (
-        <ChartWindowToolbar activeMode={prepared.mode} onChange={onWindowModeChange} />
-      ) : null}
+      <div className="chart-control-row">
+        <ChartZoomToolbar activeIndex={chartZoomIndex} onChange={onChartZoomIndexChange} />
+        {prepared.allPointCount > CHART_POINT_WINDOW_SIZE ? (
+          <ChartWindowToolbar activeMode={prepared.mode} onChange={onWindowModeChange} />
+        ) : null}
+      </div>
       {prepared.isWindowed ? (
         <p className="chart-filter-note" data-testid="chart-filter-note">
           {prepared.allPointCount.toLocaleString('ko-KR')}개 중 {prepared.note}
@@ -100,7 +108,44 @@ function renderChart(
           {sampled.originalCount.toLocaleString('ko-KR')}개 중 {sampled.sampledCount.toLocaleString('ko-KR')}개 지점을 균등 샘플링해 표시합니다.
         </p>
       ) : null}
-      {chart}
+      <div className="chart-zoom-viewport" data-testid="chart-zoom-viewport">
+        <div
+          className="chart-zoom-surface"
+          data-testid="chart-zoom-surface"
+          style={{ width: formatChartZoomLevel(chartZoomLevel) } as CSSProperties}
+        >
+          {chart}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChartZoomToolbar({
+  activeIndex,
+  onChange,
+}: {
+  activeIndex: number;
+  onChange: (index: number) => void;
+}) {
+  const zoomLevel = chartZoomLevels[activeIndex] ?? chartZoomLevels[0];
+  const isDefault = activeIndex === 0;
+  const isMax = activeIndex === chartZoomLevels.length - 1;
+
+  return (
+    <div className="chart-zoom-toolbar" role="group" aria-label="메인 차트 확대/축소">
+      <button type="button" disabled={isDefault} onClick={() => onChange(getNextChartZoomIndex(activeIndex, 'out'))}>
+        줌 아웃
+      </button>
+      <output aria-label="현재 차트 배율" data-testid="chart-zoom-label">
+        {formatChartZoomLevel(zoomLevel)}
+      </output>
+      <button type="button" disabled={isDefault} onClick={() => onChange(getNextChartZoomIndex(activeIndex, 'reset'))}>
+        원본
+      </button>
+      <button type="button" disabled={isMax} onClick={() => onChange(getNextChartZoomIndex(activeIndex, 'in'))}>
+        줌 인
+      </button>
     </div>
   );
 }

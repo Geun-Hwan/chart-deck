@@ -7,7 +7,8 @@ import { tmpdir } from 'node:os';
 const root = process.cwd();
 const snapshotDir = join(root, 'docs/ui-snapshots');
 const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const port = 5173;
+const requestedPort = Number(process.env.SNAPSHOT_PORT ?? 5173);
+const port = Number.isInteger(requestedPort) && requestedPort > 0 ? requestedPort : 5173;
 const baseUrl = `http://127.0.0.1:${port}`;
 const now = new Date();
 const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
@@ -19,7 +20,7 @@ if (!existsSync(chromePath)) {
 
 await mkdir(snapshotDir, { recursive: true });
 
-const server = spawn('npm', ['run', 'dev', '--', '--host', '127.0.0.1', '--port', String(port)], {
+const server = spawn('npm', ['run', 'dev', '--', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
   cwd: root,
   stdio: ['ignore', 'pipe', 'pipe'],
   env: { ...process.env, BROWSER: 'none' },

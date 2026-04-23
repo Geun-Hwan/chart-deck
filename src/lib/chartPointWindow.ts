@@ -18,7 +18,7 @@ export const CHART_POINT_WINDOW_SIZE = 12;
 
 export const chartPointWindowOptions: ChartPointWindowOption[] = [
   { mode: 'all', label: '전체 보기', note: '모든 지점을 표시합니다.' },
-  { mode: 'recent', label: `최근 ${CHART_POINT_WINDOW_SIZE}개 확대`, note: `최근 ${CHART_POINT_WINDOW_SIZE}개 지점만 확대해 표시합니다.` },
+  { mode: 'recent', label: `최근 ${CHART_POINT_WINDOW_SIZE}개 보기`, note: `최근 ${CHART_POINT_WINDOW_SIZE}개 지점만 표시합니다.` },
   { mode: 'top', label: `상위 ${CHART_POINT_WINDOW_SIZE}개 필터`, note: `값이 큰 상위 ${CHART_POINT_WINDOW_SIZE}개 지점만 필터링해 표시합니다.` },
 ];
 

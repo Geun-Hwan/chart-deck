@@ -90,41 +90,30 @@ export function App() {
 
   return (
     <main className="observatory-shell">
-      <header className="mission-header" aria-label="차트 비교 작업 영역">
-        <div className="mission-copy">
-          <p className="eyebrow">Chart Deck Lab</p>
-          <h1>데이터에 맞는 차트를 빠르게 비교하세요</h1>
-          <p>
-            샘플이나 CSV를 넣으면 여러 차트 후보를 한 화면에서 비교하고, 지금 데이터에 가장 어울리는 차트를 고를 수 있습니다.
-          </p>
-          <div className="mission-signals" aria-label="핵심 운영 지표">
-            <span>브라우저 로컬 처리</span>
-            <span>서버 업로드 없음</span>
-            <span>1MB · 5,000행 제한</span>
+      <section className="primary-workspace" aria-label="차트와 데이터 입력 작업 영역">
+        <section className="control-deck" aria-label="데이터 입력 영역">
+          <div className="workspace-status" aria-label="현재 작업 상태">
+            <div className="mission-panel__source">
+              <span>현재 데이터</span>
+              <strong aria-live="polite">{sourceLabel}</strong>
+            </div>
+            <div className="workspace-signals" aria-label="처리 방식">
+              <span>브라우저 로컬 처리</span>
+              <span>서버 업로드 없음</span>
+              <span>1MB · 5,000행 제한</span>
+            </div>
           </div>
-        </div>
 
-        <div className="mission-panel">
-          <div className="mission-panel__source">
-            <span>현재 데이터</span>
-            <strong aria-live="polite">{sourceLabel}</strong>
-          </div>
-          <p>차트 후보를 먼저 비교하고, 필요한 컬럼 정보와 미리보기는 옆에서 확인하세요.</p>
-        </div>
-      </header>
+          <DataInputPanel
+            inputText={inputText}
+            onTextChange={handleTextChange}
+            onLoadSample={handleLoadSample}
+            onFileText={handleFileText}
+            onError={setParseError}
+            onClear={handleClear}
+          />
+        </section>
 
-      <section className="control-deck" aria-label="데이터 입력 영역">
-        <DataInputPanel
-          inputText={inputText}
-          onTextChange={handleTextChange}
-          onLoadSample={handleLoadSample}
-          onFileText={handleFileText}
-          onError={setParseError}
-          onClear={handleClear}
-        />
-      </section>
-
-      <section className="operation-grid" aria-label="시각화 운영 영역">
         <section className="visual-stage" aria-label="시각화 결과 영역">
           <ChartGrid
             candidates={parsed.data ? candidates : []}
@@ -133,7 +122,9 @@ export function App() {
             onSelect={setSelectedChartId}
           />
         </section>
+      </section>
 
+      <section className="support-grid" aria-label="데이터 상태와 상세 정보">
         <div className="telemetry-stack">
           <SummaryDashboard summary={summary} sourceLabel={sourceLabel} />
 

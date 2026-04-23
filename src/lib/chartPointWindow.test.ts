@@ -11,7 +11,7 @@ describe('applyChartPointWindow', () => {
     expect(result.mode).toBe('all');
   });
 
-  it('최근 확대는 끝 지점부터 지정한 개수만 남긴다', () => {
+  it('최근 보기는 끝 지점부터 지정한 개수만 남긴다', () => {
     const result = applyChartPointWindow(points, 'recent', 5);
     expect(result.points.map((point) => point.label)).toEqual(['P16', 'P17', 'P18', 'P19', 'P20']);
     expect(result.originalCount).toBe(20);
@@ -25,7 +25,7 @@ describe('applyChartPointWindow', () => {
     expect(result.note).toContain('필터링');
   });
 
-  it('지점 수가 작으면 확대 모드도 전체 보기로 안전하게 되돌린다', () => {
+  it('지점 수가 작으면 최근 보기 모드도 전체 보기로 안전하게 되돌린다', () => {
     const result = applyChartPointWindow(points.slice(0, 3), 'recent', 5);
     expect(result.points).toHaveLength(3);
     expect(result.mode).toBe('all');
