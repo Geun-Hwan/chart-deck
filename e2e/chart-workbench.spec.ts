@@ -23,7 +23,6 @@ test('샘플 CSV를 선택하면 추천 차트와 대안 선택이 동작한다'
 
   await expect(page.getByText('월별 매출 CSV').first()).toBeVisible();
   await expect(page.getByRole('heading', { name: '어떤 차트가 어울릴까요?' })).toBeVisible();
-  await expect(page.getByText('선택한 차트', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '선 차트' }).first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(5);
@@ -31,7 +30,6 @@ test('샘플 CSV를 선택하면 추천 차트와 대안 선택이 동작한다'
   await expect(page.locator('.choice-strip').getByRole('button', { name: /선 차트 선택/ })).toHaveAttribute('aria-pressed', 'true');
 
   await page.getByRole('button', { name: /막대 차트/ }).click();
-  await expect(page.getByText('선택한 차트', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '막대 차트' }).first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first()).toBeVisible();
   await expect(page.locator('.choice-strip').getByRole('button', { name: /막대 차트 선택/ })).toHaveAttribute('aria-pressed', 'true');
@@ -64,7 +62,7 @@ test('범주형 차트는 동일 범주를 합산해 중복 라벨을 줄인다'
 
   const chart = page.getByRole('img', { name: '막대 차트 시각화, 3개 지점' }).first();
   await expect(chart).toBeVisible();
-  await expect(chart.locator('text')).toHaveText(['검색', '광고', '추천']);
+  await expect(chart.locator('text[data-axis="x"]')).toHaveText(['검색', '광고', '추천']);
 });
 
 test('CSV 파일 선택과 데이터 비우기가 실제로 동작한다', async ({ page }) => {
@@ -93,9 +91,30 @@ test('CSV 텍스트 붙여넣기 흐름도 로컬 입력으로 선 차트를 추
   await expect(page.locator('.mission-panel__source strong')).toHaveText('직접 붙여넣은 CSV');
   await expect(pasteDialog).toBeHidden();
   await expect(page.getByRole('heading', { name: '어떤 차트가 어울릴까요?' })).toBeVisible();
-  await expect(page.getByText('선택한 차트', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '선 차트' }).first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(3);
+});
+
+test('날짜 컬럼은 헤더명이 date여도 일·월·년 기준으로 다시 묶어 볼 수 있다', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /CSV 붙여넣기 열기/ }).click();
+  await page.getByRole('textbox', { name: 'CSV 텍스트 붙여넣기' }).fill(
+    'date,value\n2025-12-31,10\n2026-01-01,20\n2026-01-15,30\n2026-02-01,40',
+  );
+
+  await expect(page.getByRole('group', { name: '날짜 집계 단위' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '일 기준' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(4);
+
+  await page.getByRole('button', { name: '월 기준' }).click();
+  await expect(page.getByRole('button', { name: '월 기준' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(3);
+
+  await page.getByRole('button', { name: '년 기준' }).click();
+  await expect(page.getByRole('button', { name: '년 기준' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(2);
+  await expect(page.getByTestId('chart-svg').first().locator('text[data-axis="x"]')).toHaveText(['2025', '2026']);
 });
 
 test('숫자만 있는 데이터도 부족 상태로 버리지 않고 행 순서 차트로 보여준다', async ({ page }) => {
@@ -115,7 +134,6 @@ test('대량 CSV는 차트 지점을 샘플링해 렌더링한다', async ({ pag
 
   await page.getByLabel('CSV 파일 선택').setInputFiles(largeCsvPath);
   await expect(page.locator('.mission-panel__source strong')).toHaveText('내 CSV · large-timeseries.csv');
-  await expect(page.getByText('선택한 차트', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '선 차트' }).first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first()).toBeVisible();
   await expect(page.getByTestId('sampling-note').first()).toContainText('120개 중 36개');

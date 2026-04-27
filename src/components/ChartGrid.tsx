@@ -18,6 +18,20 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
         <span aria-hidden="true">?</span>
         <h2 id="empty-compass-title">차트를 보려면 데이터가 필요합니다</h2>
         <p>샘플 CSV를 선택하거나 내 CSV를 불러오면 큰 차트와 대안 후보를 바로 비교할 수 있습니다.</p>
+        <div className="empty-compass__steps" aria-label="시작 순서">
+          <article>
+            <strong>1. 데이터 선택</strong>
+            <p>왼쪽 패널에서 샘플을 고르거나 CSV를 불러옵니다.</p>
+          </article>
+          <article>
+            <strong>2. 차트 자동 추천</strong>
+            <p>컬럼 타입을 해석해 어울리는 차트를 먼저 제안합니다.</p>
+          </article>
+          <article>
+            <strong>3. 후보 비교</strong>
+            <p>대표 차트와 다른 후보를 바로 눌러 표현 방식을 비교합니다.</p>
+          </article>
+        </div>
       </section>
     );
   }
@@ -41,10 +55,8 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
         </div>
         <p>선택한 차트를 넓게 확인하고, 아래 후보를 눌러 다른 표현도 비교해보세요.</p>
       </div>
-
       {selected ? (
         <div className="compass-main">
-          <span className="featured-chart-label">선택한 차트</span>
           <ChartCard candidate={selected} rows={rows} featured />
         </div>
       ) : null}

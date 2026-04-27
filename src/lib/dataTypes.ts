@@ -26,6 +26,7 @@ export type ColumnProfile = {
 export type ChartStatus = 'ready' | 'warning' | 'placeholder' | 'error';
 
 export type ChartType = 'bar' | 'line' | 'scatter' | 'pie' | 'area';
+export type TimeGranularity = 'day' | 'month' | 'year';
 
 export type ChartCandidate = {
   id: ChartType;
@@ -33,6 +34,7 @@ export type ChartCandidate = {
   status: ChartStatus;
   reason: string;
   xKey?: string;
+  xAxisType?: ColumnType;
   yKey?: string;
   categoryKey?: string;
   valueKey?: string;

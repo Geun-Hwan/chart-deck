@@ -17,7 +17,7 @@ describe('chartCandidates', () => {
     const candidates = buildChartCandidates(profiles);
     expect(candidates).toHaveLength(5);
     expect(candidates.find((candidate) => candidate.id === 'bar')?.status).toBe('ready');
-    expect(candidates.find((candidate) => candidate.id === 'line')?.status).toBe('ready');
+    expect(candidates.find((candidate) => candidate.id === 'line')).toMatchObject({ status: 'ready', xAxisType: 'date' });
     expect(candidates.find((candidate) => candidate.id === 'scatter')?.status).toBe('ready');
   });
 

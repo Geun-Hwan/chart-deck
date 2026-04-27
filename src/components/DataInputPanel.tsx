@@ -85,45 +85,57 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
         </div>
       </div>
 
-      <div className="sample-stack" aria-label="샘플 데이터 선택">
-        {sampleDatasets.map((sample, index) => (
-          <button
-            key={sample.id}
-            type="button"
-            className={index === 0 ? 'sample-card hero-sample' : 'sample-card'}
-            aria-label={`샘플 불러오기: ${sample.name}`}
-            onClick={() => onLoadSample(sample)}
-          >
-            <span>{index === 0 ? '추천 샘플' : '샘플'}</span>
-            <strong>{sample.name.replace(/\s*CSV$/u, '')}</strong>
-            <small>{sample.description}</small>
-          </button>
-        ))}
+      <div className="input-section">
+        <div className="input-section-heading">
+          <strong>빠른 시작</strong>
+          <span>샘플 {sampleDatasets.length}개</span>
+        </div>
+        <div className="sample-stack" aria-label="샘플 데이터 선택">
+          {sampleDatasets.map((sample, index) => (
+            <button
+              key={sample.id}
+              type="button"
+              className={index === 0 ? 'sample-card hero-sample' : 'sample-card'}
+              aria-label={`샘플 불러오기: ${sample.name}`}
+              onClick={() => onLoadSample(sample)}
+            >
+              <span>{index === 0 ? '추천 샘플' : '샘플'}</span>
+              <strong>{sample.name.replace(/\s*CSV$/u, '')}</strong>
+              <small>{sample.description}</small>
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="input-actions" role="toolbar" aria-label="데이터 입력 바로가기">
-        <label className="file-action">
-          <span>CSV 파일 선택</span>
-          <small>파일 내용은 브라우저 안에서만 읽고 서버로 보내지 않습니다.</small>
-          <input type="file" accept=".csv,text/csv,text/plain" onChange={handleFileChange} />
-        </label>
+      <div className="input-section">
+        <div className="input-section-heading">
+          <strong>내 데이터 불러오기</strong>
+          <span>로컬 처리</span>
+        </div>
+        <div className="input-actions" role="toolbar" aria-label="데이터 입력 바로가기">
+          <label className="file-action">
+            <span>CSV 파일 선택</span>
+            <small>파일 내용은 브라우저 안에서만 읽고 서버로 보내지 않습니다.</small>
+            <input type="file" accept=".csv,text/csv,text/plain" onChange={handleFileChange} />
+          </label>
 
-        <button
-          type="button"
-          className="paste-toggle"
-          aria-haspopup="dialog"
-          aria-expanded={isPasteOpen}
-          aria-controls="csv-paste-dialog"
-          aria-label={isPasteOpen ? 'CSV 붙여넣기 닫기' : 'CSV 붙여넣기 열기'}
-          ref={pasteToggleRef}
-          onClick={() => setIsPasteOpen((value) => !value)}
-        >
-          CSV 붙여넣기
-        </button>
+          <button
+            type="button"
+            className="paste-toggle"
+            aria-haspopup="dialog"
+            aria-expanded={isPasteOpen}
+            aria-controls="csv-paste-dialog"
+            aria-label={isPasteOpen ? 'CSV 붙여넣기 닫기' : 'CSV 붙여넣기 열기'}
+            ref={pasteToggleRef}
+            onClick={() => setIsPasteOpen((value) => !value)}
+          >
+            CSV 붙여넣기
+          </button>
 
-        <button type="button" className="clear-button" onClick={onClear} disabled={inputText.trim().length === 0}>
-          입력 지우기
-        </button>
+          <button type="button" className="clear-button" onClick={onClear} disabled={inputText.trim().length === 0}>
+            입력 지우기
+          </button>
+        </div>
       </div>
 
       {isPasteOpen ? (

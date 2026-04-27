@@ -55,8 +55,9 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           id: 'line',
           title: '선 차트',
           status: 'ready',
-          reason: `${dateColumn.name} 날짜 흐름에 따라 ${firstNumber.name} 값을 표시할 수 있습니다.`,
+          reason: `${dateColumn.name} 날짜 컬럼을 기준으로 ${firstNumber.name} 값을 표시할 수 있습니다.`,
           xKey: dateColumn.name,
+          xAxisType: 'date',
           yKey: firstNumber.name,
         }
       : categoryColumn && firstNumber
@@ -127,8 +128,9 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           id: 'area',
           title: '영역 차트',
           status: 'ready',
-          reason: `${firstNumber.name} 값의 시간 흐름을 누적감 있게 볼 수 있습니다.`,
+          reason: `${dateColumn.name} 날짜 컬럼을 기준으로 ${firstNumber.name} 값의 흐름을 누적감 있게 볼 수 있습니다.`,
           xKey: dateColumn.name,
+          xAxisType: 'date',
           yKey: firstNumber.name,
         }
       : firstNumber
