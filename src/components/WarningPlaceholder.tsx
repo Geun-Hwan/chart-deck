@@ -2,8 +2,8 @@ import type { ChartStatus } from '../lib/dataTypes';
 
 const labelByStatus: Record<ChartStatus, string> = {
   ready: '준비됨',
-  warning: '확인 필요',
-  placeholder: '조건 부족',
+  warning: '대체 기준',
+  placeholder: '데이터 부족',
   error: '오류',
 };
 

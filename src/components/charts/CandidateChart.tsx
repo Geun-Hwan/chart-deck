@@ -2,7 +2,7 @@ import { type MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { aggregateTimeSeriesPoints } from '../../lib/chartTimeGrouping';
 import { sampleChartPoints } from '../../lib/chartSampling';
 import { applyChartZoomRange, formatChartZoomRange, getDefaultChartZoomRange, getNextChartZoomRange, type ChartZoomRange } from '../../lib/chartZoom';
-import type { ChartCandidate, DataRow, DataValue, TimeGranularity } from '../../lib/dataTypes';
+import type { ChartCandidate, DataRow, DataValue, TimeAggregationMethod, TimeGroupingMode } from '../../lib/dataTypes';
 import { WarningPlaceholder } from '../WarningPlaceholder';
 
 type Props = {
@@ -28,31 +28,44 @@ const chartFrame = {
 
 export function CandidateChart({ candidate, rows }: Props) {
   const [chartZoomRange, setChartZoomRange] = useState<ChartZoomRange | null>(null);
-  const [timeGranularity, setTimeGranularity] = useState<TimeGranularity>('day');
+  const [timeGroupingMode, setTimeGroupingMode] = useState<TimeGroupingMode>('raw');
+  const [timeAggregationMethod, setTimeAggregationMethod] = useState<TimeAggregationMethod>('sum');
+  const [selectedValueKey, setSelectedValueKey] = useState<string | null>(candidate.yKey ?? candidate.valueKey ?? null);
   const [dragSelection, setDragSelection] = useState<{ startX: number; currentX: number } | null>(null);
+  const numericColumns = useMemo(() => findNumericColumns(rows), [rows]);
+  const effectiveCandidate = useMemo(
+    () => withSelectedValueKey(candidate, selectedValueKey),
+    [candidate, selectedValueKey],
+  );
   const prepared = useMemo(
-    () => preparePoints(candidate, rows, timeGranularity),
-    [candidate, rows, timeGranularity],
+    () => preparePoints(effectiveCandidate, rows, timeGroupingMode, timeAggregationMethod),
+    [effectiveCandidate, rows, timeAggregationMethod, timeGroupingMode],
   );
 
   useEffect(() => {
     setChartZoomRange(null);
-  }, [candidate.id, rows, timeGranularity]);
+  }, [candidate.id, rows, timeAggregationMethod, timeGroupingMode]);
 
   useEffect(() => {
-    setTimeGranularity('day');
-  }, [candidate.id, candidate.xKey, candidate.yKey]);
+    setTimeGroupingMode('raw');
+    setTimeAggregationMethod('sum');
+    setSelectedValueKey(candidate.yKey ?? candidate.valueKey ?? null);
+  }, [candidate.id, candidate.valueKey, candidate.xKey, candidate.yKey]);
 
   if (candidate.status === 'placeholder' || candidate.status === 'error') {
     return <WarningPlaceholder status={candidate.status} reason={candidate.reason} />;
   }
 
   const chart = renderChart(
-    candidate,
+    effectiveCandidate,
     prepared.points,
-    prepared,
-    timeGranularity,
-    setTimeGranularity,
+    numericColumns,
+    selectedValueKey,
+    setSelectedValueKey,
+    timeGroupingMode,
+    setTimeGroupingMode,
+    timeAggregationMethod,
+    setTimeAggregationMethod,
     chartZoomRange,
     setChartZoomRange,
     dragSelection,
@@ -83,34 +96,44 @@ type ChartViewportProps = {
 function preparePoints(
   candidate: ChartCandidate,
   rows: DataRow[],
-  timeGranularity: TimeGranularity,
+  timeGroupingMode: TimeGroupingMode,
+  timeAggregationMethod: TimeAggregationMethod,
 ) {
   const rawPoints = toPoints(candidate, rows, candidate.id === 'scatter');
-  const timeGroupedPoints = shouldAggregateTimeSeriesPoints(candidate)
-    ? aggregateTimeSeriesPoints(rawPoints, timeGranularity)
+  const timeGroupedPoints = shouldAggregateTimeSeriesPoints(candidate) && timeGroupingMode !== 'raw'
+    ? aggregateTimeSeriesPoints(rawPoints, timeGroupingMode, timeAggregationMethod)
     : rawPoints;
-  const allPoints = shouldAggregateCategoryPoints(candidate) ? aggregatePointsByLabel(timeGroupedPoints) : timeGroupedPoints;
+  const categoryGroupedPoints = shouldAggregateCategoryPoints(candidate) ? aggregatePointsByLabel(timeGroupedPoints) : timeGroupedPoints;
+  const allPoints = shouldCompactProportionPoints(candidate) ? compactProportionPoints(categoryGroupedPoints) : categoryGroupedPoints;
 
   return {
     points: allPoints,
-    allPointCount: allPoints.length,
   };
 }
 
 function renderChart(
   candidate: ChartCandidate,
   visiblePoints: Point[],
-  prepared: ReturnType<typeof preparePoints>,
-  timeGranularity: TimeGranularity,
-  onTimeGranularityChange: (granularity: TimeGranularity) => void,
+  numericColumns: string[],
+  selectedValueKey: string | null,
+  onSelectedValueKeyChange: (key: string) => void,
+  timeGroupingMode: TimeGroupingMode,
+  onTimeGroupingModeChange: (mode: TimeGroupingMode) => void,
+  timeAggregationMethod: TimeAggregationMethod,
+  onTimeAggregationMethodChange: (method: TimeAggregationMethod) => void,
   chartZoomRange: ChartZoomRange | null,
   onChartZoomRangeChange: (range: ChartZoomRange | null) => void,
   dragSelection: { startX: number; currentX: number } | null,
   onDragSelectionChange: (selection: { startX: number; currentX: number } | null) => void,
 ) {
+  const zoomEnabled = shouldEnableRangeZoom(candidate);
   const activeZoomRange = chartZoomRange ?? getDefaultChartZoomRange(visiblePoints.length);
-  const zoomed = applyChartZoomRange(visiblePoints, activeZoomRange);
-  const sampled = sampleChartPoints(zoomed.points);
+  const zoomed = zoomEnabled ? applyChartZoomRange(visiblePoints, activeZoomRange) : {
+    points: visiblePoints,
+    range: getDefaultChartZoomRange(visiblePoints.length),
+    originalCount: visiblePoints.length,
+  };
+  const sampled = zoomEnabled ? sampleChartPoints(zoomed.points) : { points: zoomed.points, isSampled: false, originalCount: zoomed.points.length, sampledCount: zoomed.points.length };
   const points = sampled.points;
 
   if (points.length === 0) {
@@ -140,7 +163,21 @@ function renderChart(
     <div className="chart-render-frame">
       {shouldAggregateTimeSeriesPoints(candidate) ? (
         <div className="chart-control-row">
-          <TimeGranularityToolbar activeGranularity={timeGranularity} onChange={onTimeGranularityChange} />
+          <TimeGroupingToolbar
+            activeMode={timeGroupingMode}
+            activeMethod={timeAggregationMethod}
+            onModeChange={onTimeGroupingModeChange}
+            onMethodChange={onTimeAggregationMethodChange}
+          />
+        </div>
+      ) : null}
+      {shouldShowValueKeyPicker(candidate, numericColumns) ? (
+        <div className="chart-control-row">
+          <ValueKeyPicker
+            numericColumns={numericColumns}
+            selectedValueKey={selectedValueKey}
+            onChange={onSelectedValueKeyChange}
+          />
         </div>
       ) : null}
       {sampled.isSampled ? (
@@ -148,64 +185,119 @@ function renderChart(
           {sampled.originalCount.toLocaleString('ko-KR')}개 중 {sampled.sampledCount.toLocaleString('ko-KR')}개 지점을 균등 샘플링해 표시합니다.
         </p>
       ) : null}
-      <ChartViewport
-        ariaLabel="마우스 휠과 드래그로 차트 데이터 범위를 조절"
-        activeZoomRange={activeZoomRange}
-        totalCount={visiblePoints.length}
-        dragSelection={dragSelection}
-        onDragSelectionChange={onDragSelectionChange}
-        onZoomChange={onChartZoomRangeChange}
-      >
-        <div className="chart-interaction-hint" data-testid="chart-zoom-label">
-          <span>드래그 확대 · 더블클릭 초기화 · 휠 미세 조정</span>
-          <strong data-testid="chart-zoom-range">{formatChartZoomRange(zoomed.range, zoomed.originalCount)}</strong>
-        </div>
-        {dragSelection ? (
-          <div
-            className="chart-drag-selection"
-            style={buildDragSelectionStyle(dragSelection.startX, dragSelection.currentX)}
-            aria-hidden="true"
-          />
-        ) : null}
-        {chartZoomRange ? (
-          <button type="button" className="chart-reset-button" onClick={() => onChartZoomRangeChange(null)}>
-            전체로 돌아가기
-          </button>
-        ) : null}
-        <div className="chart-zoom-surface" data-testid="chart-zoom-surface">
+      {zoomEnabled ? (
+        <ChartViewport
+          ariaLabel="드래그로 차트 데이터 범위를 자세히 보기"
+          activeZoomRange={activeZoomRange}
+          totalCount={visiblePoints.length}
+          dragSelection={dragSelection}
+          onDragSelectionChange={onDragSelectionChange}
+          onZoomChange={onChartZoomRangeChange}
+        >
+          <div className="chart-interaction-hint" data-testid="chart-zoom-label">
+            <span>드래그 확대 · 더블클릭 초기화 · 휠 미세 조정</span>
+            <strong data-testid="chart-zoom-range">{formatChartZoomRange(zoomed.range, zoomed.originalCount)}</strong>
+          </div>
+          {dragSelection ? (
+            <div
+              className="chart-drag-selection"
+              style={buildDragSelectionStyle(dragSelection.startX, dragSelection.currentX)}
+              aria-hidden="true"
+            />
+          ) : null}
+          {chartZoomRange ? (
+            <button type="button" className="chart-reset-button" onClick={() => onChartZoomRangeChange(null)}>
+              전체로 돌아가기
+            </button>
+          ) : null}
+          <div className="chart-zoom-surface" data-testid="chart-zoom-surface">
+            {chart}
+          </div>
+        </ChartViewport>
+      ) : (
+        <div className="chart-static-viewport" data-testid="chart-static-viewport">
           {chart}
         </div>
-      </ChartViewport>
+      )}
     </div>
   );
 }
 
-function TimeGranularityToolbar({
-  activeGranularity,
+function ValueKeyPicker({
+  numericColumns,
+  selectedValueKey,
   onChange,
 }: {
-  activeGranularity: TimeGranularity;
-  onChange: (granularity: TimeGranularity) => void;
+  numericColumns: string[];
+  selectedValueKey: string | null;
+  onChange: (key: string) => void;
 }) {
-  const options: Array<{ value: TimeGranularity; label: string }> = [
-    { value: 'day', label: '일 기준' },
-    { value: 'month', label: '월 기준' },
-    { value: 'year', label: '년 기준' },
+  return (
+    <label className="chart-value-picker">
+      <span>값 컬럼</span>
+      <select value={selectedValueKey ?? numericColumns[0] ?? ''} onChange={(event) => onChange(event.target.value)}>
+        {numericColumns.map((column) => (
+          <option key={column} value={column}>
+            {column}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function TimeGroupingToolbar({
+  activeMode,
+  activeMethod,
+  onModeChange,
+  onMethodChange,
+}: {
+  activeMode: TimeGroupingMode;
+  activeMethod: TimeAggregationMethod;
+  onModeChange: (mode: TimeGroupingMode) => void;
+  onMethodChange: (method: TimeAggregationMethod) => void;
+}) {
+  const modeOptions: Array<{ value: TimeGroupingMode; label: string }> = [
+    { value: 'raw', label: '원본 순서' },
+    { value: 'day', label: '일별' },
+    { value: 'month', label: '월별' },
+    { value: 'year', label: '연도별' },
+  ];
+  const methodOptions: Array<{ value: TimeAggregationMethod; label: string }> = [
+    { value: 'sum', label: '합계' },
+    { value: 'average', label: '평균' },
   ];
 
   return (
-    <div className="chart-window-toolbar" role="group" aria-label="날짜 집계 단위">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          className={activeGranularity === option.value ? 'is-active' : ''}
-          aria-pressed={activeGranularity === option.value}
-          onClick={() => onChange(option.value)}
-        >
-          {option.label}
-        </button>
-      ))}
+    <div className="chart-option-panel" aria-label="날짜 표시 옵션">
+      <div className="chart-window-toolbar" role="group" aria-label="날짜 표시 방식">
+        {modeOptions.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={activeMode === option.value ? 'is-active' : ''}
+            aria-pressed={activeMode === option.value}
+            onClick={() => onModeChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      {activeMode !== 'raw' ? (
+        <div className="chart-window-toolbar" role="group" aria-label="날짜 집계 계산">
+          {methodOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={activeMethod === option.value ? 'is-active' : ''}
+              aria-pressed={activeMethod === option.value}
+              onClick={() => onMethodChange(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -333,11 +425,24 @@ function toPoints(candidate: ChartCandidate, rows: DataRow[], useNumericX = fals
 }
 
 function shouldAggregateCategoryPoints(candidate: ChartCandidate): boolean {
-  return Boolean(candidate.categoryKey && (candidate.id === 'bar' || candidate.id === 'pie'));
+  return Boolean(candidate.categoryKey && (candidate.id === 'bar' || candidate.id === 'pie' || candidate.id === 'donut' || candidate.id === 'radar'));
 }
 
 function shouldAggregateTimeSeriesPoints(candidate: ChartCandidate): boolean {
   return candidate.xAxisType === 'date' && Boolean(candidate.xKey && candidate.yKey);
+}
+
+function shouldEnableRangeZoom(candidate: ChartCandidate): boolean {
+  return candidate.id === 'bar' || candidate.id === 'line' || candidate.id === 'area' || candidate.id === 'scatter';
+}
+
+function shouldShowValueKeyPicker(candidate: ChartCandidate, numericColumns: string[]): boolean {
+  if (numericColumns.length <= 1 || candidate.id === 'scatter') return false;
+  return Boolean(candidate.yKey || candidate.valueKey);
+}
+
+function shouldCompactProportionPoints(candidate: ChartCandidate): boolean {
+  return candidate.id === 'pie' || candidate.id === 'donut';
 }
 
 function aggregatePointsByLabel(points: Point[]): Point[] {
@@ -351,6 +456,26 @@ function aggregatePointsByLabel(points: Point[]): Point[] {
     current.value += point.value;
   }
   return [...totals.values()];
+}
+
+function compactProportionPoints(points: Point[], limit = 6): Point[] {
+  if (points.length <= limit) return points;
+  const sorted = [...points].sort((left, right) => Math.max(right.value, 0) - Math.max(left.value, 0));
+  const visible = sorted.slice(0, limit - 1);
+  const otherValue = sorted.slice(limit - 1).reduce((sum, point) => sum + Math.max(point.value, 0), 0);
+  return otherValue > 0 ? [...visible, { label: '기타', x: visible.length, value: otherValue }] : visible;
+}
+
+function findNumericColumns(rows: DataRow[]): string[] {
+  const keys = new Set(rows.flatMap((row) => Object.keys(row)));
+  return [...keys].filter((key) => rows.some((row) => toNumber(row[key]) !== null));
+}
+
+function withSelectedValueKey(candidate: ChartCandidate, valueKey: string | null): ChartCandidate {
+  if (!valueKey || candidate.id === 'scatter') return candidate;
+  if (candidate.yKey) return { ...candidate, yKey: valueKey };
+  if (candidate.valueKey) return { ...candidate, valueKey };
+  return candidate;
 }
 
 function toNumber(value: DataValue): number | null {

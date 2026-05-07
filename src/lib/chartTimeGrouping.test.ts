@@ -32,4 +32,12 @@ describe('chartTimeGrouping', () => {
       { label: '2026', x: Date.UTC(2026, 0, 1), value: 90 },
     ]);
   });
+
+  it('평균 기준에서는 같은 기간 값을 평균으로 묶는다', () => {
+    expect(aggregateTimeSeriesPoints(points, 'month', 'average')).toEqual([
+      { label: '2025-12', x: Date.UTC(2025, 11, 1), value: 10 },
+      { label: '2026-01', x: Date.UTC(2026, 0, 1), value: 25 },
+      { label: '2026-02', x: Date.UTC(2026, 1, 1), value: 40 },
+    ]);
+  });
 });

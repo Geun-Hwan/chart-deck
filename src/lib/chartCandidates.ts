@@ -31,17 +31,17 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           title: '막대 차트',
           status: categoryColumn ? 'ready' : 'warning',
           reason: categoryColumn
-            ? `${categoryColumn.name} 범주와 ${firstNumber.name} 숫자 값을 비교할 수 있습니다.`
-            : `${labelColumn.name} 컬럼을 임시 라벨로 삼아 ${firstNumber.name} 값을 비교합니다.`,
+            ? `${categoryColumn.name}별 ${firstNumber.name} 값을 비교합니다. 같은 범주는 합산해 보여줍니다.`
+            : `${labelColumn.name} 컬럼을 라벨로 삼아 ${firstNumber.name} 값을 비교합니다.`,
           categoryKey: labelColumn.name,
           valueKey: firstNumber.name,
         }
       : firstNumber
         ? {
-            id: 'bar',
-            title: '막대 차트',
-            status: 'warning',
-            reason: '범주 컬럼은 없지만 행 순서 기준으로 숫자 값을 비교합니다.',
+          id: 'bar',
+          title: '막대 차트',
+          status: 'warning',
+          reason: '범주 컬럼이 없어 행 순서 기준으로 숫자 값을 비교합니다.',
             valueKey: firstNumber.name,
           }
       : {
@@ -55,7 +55,7 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           id: 'line',
           title: '선 차트',
           status: 'ready',
-          reason: `${dateColumn.name} 날짜 컬럼을 기준으로 ${firstNumber.name} 값을 표시할 수 있습니다.`,
+          reason: `${dateColumn.name} 흐름에 따라 ${firstNumber.name} 값을 표시합니다. 원본·일별·월별·연도별로 바꿔볼 수 있습니다.`,
           xKey: dateColumn.name,
           xAxisType: 'date',
           yKey: firstNumber.name,
@@ -65,7 +65,7 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
             id: 'line',
             title: '선 차트',
             status: 'warning',
-            reason: '날짜 컬럼이 없어 범주 순서 기반 더미/대체 선 차트로 표시합니다.',
+            reason: '날짜 컬럼이 없어 범주 순서대로 값의 흐름을 표시합니다.',
             xKey: categoryColumn.name,
             yKey: firstNumber.name,
           }
@@ -74,7 +74,7 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
               id: 'line',
               title: '선 차트',
               status: 'warning',
-              reason: '날짜/범주 컬럼은 없지만 행 순서 흐름으로 숫자 변화를 표시합니다.',
+              reason: '날짜/범주 컬럼이 없어 행 순서대로 숫자 변화를 표시합니다.',
               yKey: firstNumber.name,
             }
         : {
@@ -104,8 +104,8 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           title: '파이 차트',
           status: categoryColumn ? 'ready' : 'warning',
           reason: categoryColumn
-            ? `${categoryColumn.name} 범주의 ${firstNumber.name} 비중을 볼 수 있습니다.`
-            : `${labelColumn.name} 값을 임시 범주로 묶어 ${firstNumber.name} 비중을 살펴봅니다.`,
+            ? `${categoryColumn.name}별 ${firstNumber.name} 비중을 봅니다. 항목이 많으면 주요 항목과 기타로 정리합니다.`
+            : `${labelColumn.name} 값을 범주로 묶어 ${firstNumber.name} 비중을 살펴봅니다.`,
           categoryKey: labelColumn.name,
           valueKey: firstNumber.name,
         }
@@ -114,7 +114,7 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
             id: 'pie',
             title: '파이 차트',
             status: 'warning',
-            reason: '범주 컬럼은 없지만 행 순서별 숫자 비중을 임시로 표시합니다.',
+            reason: '범주 컬럼이 없어 행 순서별 숫자 비중을 표시합니다.',
             valueKey: firstNumber.name,
           }
       : {
@@ -129,8 +129,8 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           title: '도넛 차트',
           status: categoryColumn ? 'ready' : 'warning',
           reason: categoryColumn
-            ? `${categoryColumn.name} 범주별 ${firstNumber.name} 비중을 도넛 형태로 볼 수 있습니다.`
-            : `${labelColumn.name} 값을 임시 범주로 묶어 ${firstNumber.name} 비중을 도넛 형태로 보여줍니다.`,
+            ? `${categoryColumn.name}별 ${firstNumber.name} 비중을 도넛 형태로 봅니다. 항목이 많으면 주요 항목과 기타로 정리합니다.`
+            : `${labelColumn.name} 값을 범주로 묶어 ${firstNumber.name} 비중을 도넛 형태로 보여줍니다.`,
           categoryKey: labelColumn.name,
           valueKey: firstNumber.name,
         }
@@ -139,7 +139,7 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
             id: 'donut',
             title: '도넛 차트',
             status: 'warning',
-            reason: '범주 컬럼은 없지만 행 순서별 숫자 비중을 도넛 형태로 임시 표시합니다.',
+            reason: '범주 컬럼이 없어 행 순서별 숫자 비중을 도넛 형태로 표시합니다.',
             valueKey: firstNumber.name,
           }
       : {
@@ -153,7 +153,7 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           id: 'area',
           title: '영역 차트',
           status: 'ready',
-          reason: `${dateColumn.name} 날짜 컬럼을 기준으로 ${firstNumber.name} 값의 흐름을 누적감 있게 볼 수 있습니다.`,
+          reason: `${dateColumn.name} 흐름에 따라 ${firstNumber.name} 변화를 면적으로 강조합니다. 원본·일별·월별·연도별로 바꿔볼 수 있습니다.`,
           xKey: dateColumn.name,
           xAxisType: 'date',
           yKey: firstNumber.name,
@@ -178,8 +178,8 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           title: '레이더 차트',
           status: categoryColumn ? 'ready' : 'warning',
           reason: categoryColumn
-            ? `${categoryColumn.name} 범주별 ${firstNumber.name} 차이를 방사형으로 비교할 수 있습니다.`
-            : `${labelColumn.name} 값을 임시 범주로 삼아 ${firstNumber.name} 차이를 방사형으로 비교합니다.`,
+            ? `${categoryColumn.name}별 ${firstNumber.name} 차이를 방사형으로 비교합니다.`
+            : `${labelColumn.name} 값을 범주로 삼아 ${firstNumber.name} 차이를 방사형으로 비교합니다.`,
           categoryKey: labelColumn.name,
           valueKey: firstNumber.name,
         }
@@ -188,7 +188,7 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
             id: 'radar',
             title: '레이더 차트',
             status: 'warning',
-            reason: '범주 컬럼은 없지만 행 순서를 기준으로 숫자 차이를 방사형으로 표시합니다.',
+            reason: '범주 컬럼이 없어 행 순서를 기준으로 숫자 차이를 방사형으로 표시합니다.',
             valueKey: firstNumber.name,
           }
       : {

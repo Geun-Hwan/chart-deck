@@ -99,7 +99,7 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
               aria-label={`샘플 불러오기: ${sample.name}`}
               onClick={() => onLoadSample(sample)}
             >
-              <span>{index === 0 ? '추천 샘플' : '샘플'}</span>
+              <span>{index === 0 ? '기본 샘플' : '샘플'}</span>
               <strong>{sample.name}</strong>
               <small>{sample.description}</small>
             </button>

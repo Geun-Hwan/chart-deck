@@ -1,4 +1,4 @@
-import type { TimeGranularity } from './dataTypes';
+import type { TimeAggregationMethod, TimeGranularity } from './dataTypes';
 
 export type TimeSeriesPoint = {
   label: string;
@@ -6,13 +6,21 @@ export type TimeSeriesPoint = {
   value: number;
 };
 
-export function aggregateTimeSeriesPoints(points: TimeSeriesPoint[], granularity: TimeGranularity): TimeSeriesPoint[] {
-  const grouped = new Map<string, TimeSeriesPoint>();
+type GroupedPoint = TimeSeriesPoint & {
+  count: number;
+};
+
+export function aggregateTimeSeriesPoints(
+  points: TimeSeriesPoint[],
+  granularity: TimeGranularity,
+  method: TimeAggregationMethod = 'sum',
+): TimeSeriesPoint[] {
+  const grouped = new Map<string, GroupedPoint>();
 
   for (const point of points) {
     const bucket = toTimeBucket(point.label, granularity);
     if (!bucket) {
-      grouped.set(`${point.label}-${point.x}`, { ...point });
+      grouped.set(`${point.label}-${point.x}`, { ...point, count: 1 });
       continue;
     }
 
@@ -22,14 +30,21 @@ export function aggregateTimeSeriesPoints(points: TimeSeriesPoint[], granularity
         label: bucket.label,
         x: bucket.timestamp,
         value: point.value,
+        count: 1,
       });
       continue;
     }
 
     current.value += point.value;
+    current.count += 1;
   }
 
-  return [...grouped.values()].sort((left, right) => left.x - right.x);
+  return [...grouped.values()]
+    .map(({ count, ...point }) => ({
+      ...point,
+      value: method === 'average' ? point.value / count : point.value,
+    }))
+    .sort((left, right) => left.x - right.x);
 }
 
 function toTimeBucket(label: string, granularity: TimeGranularity) {

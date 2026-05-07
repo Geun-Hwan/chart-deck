@@ -13,27 +13,25 @@ type Props = {
 
 export function SummaryDashboard({ summary }: Props) {
   const visibleTypeCounts = Object.entries(summary.typeCounts).filter(([, count]) => count > 0);
-  const statusLabel = summary.readyChartCount > 0 ? '추천 가능' : '검토 필요';
   const helperText = summary.readyChartCount > 0
-    ? '데이터 요약과 컬럼 구조를 함께 확인할 수 있습니다.'
-    : '컬럼 구조를 먼저 확인하면 차트 선택이 쉬워집니다.';
+    ? '행과 컬럼 수, 감지된 타입만 간단히 보여줍니다.'
+    : '컬럼 타입을 확인한 뒤 차트 후보를 다시 볼 수 있습니다.';
 
   return (
-    <section className="data-orbit" aria-label="데이터 요약">
+    <section className="data-orbit" aria-label="데이터 정보">
       <div className="orbit-heading">
         <div>
-          <p className="eyebrow">데이터 개요</p>
-          <strong>{summary.dataHealthLabel}</strong>
+          <p className="eyebrow">데이터 정보</p>
+          <strong>{summary.rowCount.toLocaleString('ko-KR')}행 · {summary.columnCount.toLocaleString('ko-KR')}컬럼</strong>
           <p>{helperText}</p>
         </div>
-        <span className="soft-badge">{statusLabel}</span>
       </div>
 
       <div className="orbit-metrics" aria-label="데이터 요약 수치">
         <Metric label="행" value={summary.rowCount.toLocaleString('ko-KR')} />
         <Metric label="컬럼" value={summary.columnCount.toLocaleString('ko-KR')} />
-        <Metric label="추천" value={`${summary.readyChartCount}개`} />
-        <Metric label="상태" value={statusLabel} />
+        <Metric label="숫자 컬럼" value={`${summary.typeCounts.number}개`} />
+        <Metric label="날짜 컬럼" value={`${summary.typeCounts.date}개`} />
       </div>
 
       <div className="orbit-types">

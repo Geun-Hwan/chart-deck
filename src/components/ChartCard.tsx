@@ -2,9 +2,9 @@ import type { ChartCandidate, DataRow } from '../lib/dataTypes';
 import { CandidateChart } from './charts/CandidateChart';
 
 const statusLabels: Record<ChartCandidate['status'], string> = {
-  ready: '실제 차트',
-  warning: '확인 필요',
-  placeholder: '더미 표시',
+  ready: '사용 가능',
+  warning: '대체 기준',
+  placeholder: '데이터 부족',
   error: '오류',
 };
 

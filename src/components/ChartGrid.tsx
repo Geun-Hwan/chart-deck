@@ -17,15 +17,15 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
       <section className="empty-compass" aria-labelledby="empty-compass-title">
         <span aria-hidden="true">?</span>
         <h2 id="empty-compass-title">차트를 보려면 데이터가 필요합니다</h2>
-        <p>샘플을 열거나 CSV를 넣으면 추천 차트를 바로 볼 수 있습니다.</p>
+        <p>샘플을 열거나 CSV를 넣으면 차트 후보를 바로 비교할 수 있습니다.</p>
         <div className="empty-compass__steps" aria-label="시작 순서">
           <article>
             <strong>1. 데이터 선택</strong>
             <p>입력 패널에서 샘플을 고르거나 CSV를 불러옵니다.</p>
           </article>
           <article>
-            <strong>2. 차트 자동 추천</strong>
-            <p>컬럼 타입을 해석해 어울리는 차트를 먼저 제안합니다.</p>
+            <strong>2. 차트 후보 확인</strong>
+            <p>컬럼 타입을 해석해 가능한 차트부터 보여줍니다.</p>
           </article>
           <article>
             <strong>3. 후보 비교</strong>
@@ -50,10 +50,10 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
     <section className="chart-compass" aria-labelledby="chart-compass-title">
       <div className="compass-header">
         <div>
-          <p className="eyebrow">추천 차트</p>
-          <h2 id="chart-compass-title">어떤 차트가 잘 맞을까요?</h2>
+          <p className="eyebrow">차트 후보</p>
+          <h2 id="chart-compass-title">데이터를 어떤 형태로 볼까요?</h2>
         </div>
-        <p>가장 어울리는 차트를 먼저 보여주고, 다른 차트도 바로 비교할 수 있습니다.</p>
+        <p>첫 후보를 기준으로 시작하되, 표현 방식은 언제든 바꿀 수 있습니다.</p>
       </div>
       {selected ? (
         <div className="compass-main">
@@ -88,14 +88,14 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
           <span aria-hidden="true">→</span>
         </button>
       </div>
-      <p className="choice-scroll-hint">다른 차트는 아래 목록에서 바로 바꿔볼 수 있습니다.</p>
+      <p className="choice-scroll-hint">목록에서 다른 표현 방식을 선택할 수 있습니다.</p>
     </section>
   );
 }
 
 function statusText(status: ChartCandidate['status']): string {
   if (status === 'ready') return '바로 보기';
-  if (status === 'warning') return '확인 필요';
-  if (status === 'placeholder') return '조건 부족';
+  if (status === 'warning') return '대체 기준';
+  if (status === 'placeholder') return '데이터 부족';
   return '오류';
 }

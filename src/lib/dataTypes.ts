@@ -27,6 +27,8 @@ export type ChartStatus = 'ready' | 'warning' | 'placeholder' | 'error';
 
 export type ChartType = 'bar' | 'line' | 'scatter' | 'pie' | 'area' | 'donut' | 'radar';
 export type TimeGranularity = 'day' | 'month' | 'year';
+export type TimeGroupingMode = 'raw' | TimeGranularity;
+export type TimeAggregationMethod = 'sum' | 'average';
 
 export type ChartCandidate = {
   id: ChartType;
