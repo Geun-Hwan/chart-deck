@@ -74,12 +74,12 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
                 type="button"
                 className={`choice-chip status-${candidate.status} ${isSelected ? 'is-selected' : ''}`}
                 aria-pressed={isSelected}
-                aria-label={`${candidate.title} 선택 · ${statusText(candidate.status)}${isSelected ? ' · 현재 선택됨' : ''}`}
+                aria-label={`${candidate.title} 선택 · ${statusText(candidate.status)}${isSelected ? ' · 선택됨' : ''}`}
                 onClick={() => onSelect(candidate.id)}
               >
-                <span>{statusText(candidate.status)}</span>
+                {candidate.status === 'ready' ? null : <span>{statusText(candidate.status)}</span>}
                 <strong>{candidate.title}</strong>
-                {isSelected ? <em>현재 선택됨</em> : null}
+                {isSelected ? <em>선택됨</em> : null}
               </button>
             );
           })}

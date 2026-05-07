@@ -19,7 +19,7 @@ export function ChartCard({ candidate, rows, featured = false }: Props) {
     <article className={`chart-card status-${candidate.status} ${featured ? 'featured' : ''}`}>
       <header>
         <div>
-          <span className="status-pill">{statusLabels[candidate.status]}</span>
+          {candidate.status === 'ready' ? null : <span className="status-pill">{statusLabels[candidate.status]}</span>}
           <h3>{candidate.title}</h3>
         </div>
       </header>

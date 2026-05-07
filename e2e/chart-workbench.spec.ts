@@ -26,9 +26,9 @@ test('샘플 CSV를 선택하면 차트 후보와 대안 선택이 동작한다'
   await expect(page.getByRole('heading', { name: '선 차트' }).first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(5);
-  await expect(page.getByLabel('값 컬럼')).toHaveValue('revenue');
-  await page.getByLabel('값 컬럼').selectOption('visitors');
-  await expect(page.getByLabel('값 컬럼')).toHaveValue('visitors');
+  await expect(page.getByLabel('값')).toHaveValue('revenue');
+  await page.getByLabel('값').selectOption('visitors');
+  await expect(page.getByLabel('값')).toHaveValue('visitors');
   await expect(page.getByTestId('chart-svg').first().locator('circle')).toHaveCount(5);
   await expect(page.locator('.choice-strip').getByRole('button')).toHaveCount(7);
   await expect(page.locator('.choice-strip').getByRole('button', { name: /선 차트 선택/ })).toHaveAttribute('aria-pressed', 'true');
@@ -37,7 +37,7 @@ test('샘플 CSV를 선택하면 차트 후보와 대안 선택이 동작한다'
   await expect(page.getByRole('heading', { name: '막대 차트' }).first()).toBeVisible();
   await expect(page.getByTestId('chart-svg').first()).toBeVisible();
   await expect(page.locator('.choice-strip').getByRole('button', { name: /막대 차트 선택/ })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.choice-strip').getByText('현재 선택됨')).toHaveCount(1);
+  await expect(page.locator('.choice-strip').getByText('선택됨')).toHaveCount(1);
 });
 
 test('파이와 도넛 차트는 휠 확대 대신 고정 비중 차트로 보여준다', async ({ page }) => {
@@ -87,6 +87,25 @@ test('범주형 차트는 동일 범주를 합산해 중복 라벨을 줄인다'
   const chart = page.getByRole('img', { name: '막대 차트 시각화, 3개 지점' }).first();
   await expect(chart).toBeVisible();
   await expect(chart.locator('text[data-axis="x"]')).toHaveText(['검색', '광고', '추천']);
+});
+
+test('막대 차트도 날짜 기준 월별 집계로 바꿔 볼 수 있다', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /CSV 붙여넣기 열기|텍스트 붙여넣기 열기/ }).click();
+  await page.getByRole('textbox', { name: 'CSV 텍스트 붙여넣기' }).fill(
+    'date,value,group\n2026-01-01,10,A\n2026-01-15,20,A\n2026-02-01,30,B',
+  );
+  await page.getByRole('button', { name: /막대 차트/ }).click();
+
+  await expect(page.getByLabel('기준')).toHaveValue('group');
+  await page.getByLabel('기준').selectOption('date');
+  await expect(page.getByRole('group', { name: '날짜 표시 방식' })).toBeVisible();
+  await page.getByRole('button', { name: '월별', exact: true }).click();
+
+  const chart = page.getByRole('img', { name: '막대 차트 시각화, 2개 지점' }).first();
+  await expect(chart).toBeVisible();
+  await expect(chart.locator('text[data-axis="x"]')).toHaveText(['2026-01', '2026-02']);
 });
 
 test('CSV 파일 선택과 데이터 비우기가 실제로 동작한다', async ({ page }) => {

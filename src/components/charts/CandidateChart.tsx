@@ -31,11 +31,14 @@ export function CandidateChart({ candidate, rows }: Props) {
   const [timeGroupingMode, setTimeGroupingMode] = useState<TimeGroupingMode>('raw');
   const [timeAggregationMethod, setTimeAggregationMethod] = useState<TimeAggregationMethod>('sum');
   const [selectedValueKey, setSelectedValueKey] = useState<string | null>(candidate.yKey ?? candidate.valueKey ?? null);
+  const [selectedDimensionKey, setSelectedDimensionKey] = useState<string | null>(candidate.xKey ?? candidate.categoryKey ?? null);
   const [dragSelection, setDragSelection] = useState<{ startX: number; currentX: number } | null>(null);
   const numericColumns = useMemo(() => findNumericColumns(rows), [rows]);
+  const dimensionColumns = useMemo(() => findDimensionColumns(rows, numericColumns), [numericColumns, rows]);
+  const dateColumns = useMemo(() => findDateColumns(rows), [rows]);
   const effectiveCandidate = useMemo(
-    () => withSelectedValueKey(candidate, selectedValueKey),
-    [candidate, selectedValueKey],
+    () => withSelectedKeys(candidate, selectedValueKey, selectedDimensionKey, dateColumns),
+    [candidate, dateColumns, selectedDimensionKey, selectedValueKey],
   );
   const prepared = useMemo(
     () => preparePoints(effectiveCandidate, rows, timeGroupingMode, timeAggregationMethod),
@@ -50,7 +53,8 @@ export function CandidateChart({ candidate, rows }: Props) {
     setTimeGroupingMode('raw');
     setTimeAggregationMethod('sum');
     setSelectedValueKey(candidate.yKey ?? candidate.valueKey ?? null);
-  }, [candidate.id, candidate.valueKey, candidate.xKey, candidate.yKey]);
+    setSelectedDimensionKey(candidate.xKey ?? candidate.categoryKey ?? null);
+  }, [candidate.categoryKey, candidate.id, candidate.valueKey, candidate.xKey, candidate.yKey]);
 
   if (candidate.status === 'placeholder' || candidate.status === 'error') {
     return <WarningPlaceholder status={candidate.status} reason={candidate.reason} />;
@@ -62,6 +66,9 @@ export function CandidateChart({ candidate, rows }: Props) {
     numericColumns,
     selectedValueKey,
     setSelectedValueKey,
+    dimensionColumns,
+    selectedDimensionKey,
+    setSelectedDimensionKey,
     timeGroupingMode,
     setTimeGroupingMode,
     timeAggregationMethod,
@@ -117,6 +124,9 @@ function renderChart(
   numericColumns: string[],
   selectedValueKey: string | null,
   onSelectedValueKeyChange: (key: string) => void,
+  dimensionColumns: string[],
+  selectedDimensionKey: string | null,
+  onSelectedDimensionKeyChange: (key: string) => void,
   timeGroupingMode: TimeGroupingMode,
   onTimeGroupingModeChange: (mode: TimeGroupingMode) => void,
   timeAggregationMethod: TimeAggregationMethod,
@@ -161,23 +171,30 @@ function renderChart(
 
   return (
     <div className="chart-render-frame">
-      {shouldAggregateTimeSeriesPoints(candidate) ? (
-        <div className="chart-control-row">
-          <TimeGroupingToolbar
-            activeMode={timeGroupingMode}
-            activeMethod={timeAggregationMethod}
-            onModeChange={onTimeGroupingModeChange}
-            onMethodChange={onTimeAggregationMethodChange}
-          />
-        </div>
-      ) : null}
-      {shouldShowValueKeyPicker(candidate, numericColumns) ? (
-        <div className="chart-control-row">
-          <ValueKeyPicker
-            numericColumns={numericColumns}
-            selectedValueKey={selectedValueKey}
-            onChange={onSelectedValueKeyChange}
-          />
+      {shouldShowChartSettings(candidate, numericColumns, dimensionColumns) ? (
+        <div className="chart-settings-bar" aria-label="차트 표시 설정">
+          {shouldShowDimensionPicker(candidate, dimensionColumns) ? (
+            <DimensionKeyPicker
+              dimensionColumns={dimensionColumns}
+              selectedDimensionKey={selectedDimensionKey}
+              onChange={onSelectedDimensionKeyChange}
+            />
+          ) : null}
+          {shouldShowValueKeyPicker(candidate, numericColumns) ? (
+            <ValueKeyPicker
+              numericColumns={numericColumns}
+              selectedValueKey={selectedValueKey}
+              onChange={onSelectedValueKeyChange}
+            />
+          ) : null}
+          {shouldAggregateTimeSeriesPoints(candidate) ? (
+            <TimeGroupingToolbar
+              activeMode={timeGroupingMode}
+              activeMethod={timeAggregationMethod}
+              onModeChange={onTimeGroupingModeChange}
+              onMethodChange={onTimeAggregationMethodChange}
+            />
+          ) : null}
         </div>
       ) : null}
       {sampled.isSampled ? (
@@ -223,6 +240,29 @@ function renderChart(
   );
 }
 
+function DimensionKeyPicker({
+  dimensionColumns,
+  selectedDimensionKey,
+  onChange,
+}: {
+  dimensionColumns: string[];
+  selectedDimensionKey: string | null;
+  onChange: (key: string) => void;
+}) {
+  return (
+    <label className="chart-select-field">
+      <span>기준</span>
+      <select value={selectedDimensionKey ?? dimensionColumns[0] ?? ''} onChange={(event) => onChange(event.target.value)}>
+        {dimensionColumns.map((column) => (
+          <option key={column} value={column}>
+            {column}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function ValueKeyPicker({
   numericColumns,
   selectedValueKey,
@@ -233,8 +273,8 @@ function ValueKeyPicker({
   onChange: (key: string) => void;
 }) {
   return (
-    <label className="chart-value-picker">
-      <span>값 컬럼</span>
+    <label className="chart-select-field">
+      <span>값</span>
       <select value={selectedValueKey ?? numericColumns[0] ?? ''} onChange={(event) => onChange(event.target.value)}>
         {numericColumns.map((column) => (
           <option key={column} value={column}>
@@ -270,6 +310,7 @@ function TimeGroupingToolbar({
 
   return (
     <div className="chart-option-panel" aria-label="날짜 표시 옵션">
+      <span>날짜</span>
       <div className="chart-window-toolbar" role="group" aria-label="날짜 표시 방식">
         {modeOptions.map((option) => (
           <button
@@ -429,7 +470,7 @@ function shouldAggregateCategoryPoints(candidate: ChartCandidate): boolean {
 }
 
 function shouldAggregateTimeSeriesPoints(candidate: ChartCandidate): boolean {
-  return candidate.xAxisType === 'date' && Boolean(candidate.xKey && candidate.yKey);
+  return candidate.xAxisType === 'date' && Boolean(candidate.xKey && (candidate.yKey || candidate.valueKey));
 }
 
 function shouldEnableRangeZoom(candidate: ChartCandidate): boolean {
@@ -439,6 +480,17 @@ function shouldEnableRangeZoom(candidate: ChartCandidate): boolean {
 function shouldShowValueKeyPicker(candidate: ChartCandidate, numericColumns: string[]): boolean {
   if (numericColumns.length <= 1 || candidate.id === 'scatter') return false;
   return Boolean(candidate.yKey || candidate.valueKey);
+}
+
+function shouldShowDimensionPicker(candidate: ChartCandidate, dimensionColumns: string[]): boolean {
+  if (dimensionColumns.length <= 1) return false;
+  return candidate.id === 'bar' || candidate.id === 'pie' || candidate.id === 'donut' || candidate.id === 'radar';
+}
+
+function shouldShowChartSettings(candidate: ChartCandidate, numericColumns: string[], dimensionColumns: string[]): boolean {
+  return shouldAggregateTimeSeriesPoints(candidate)
+    || shouldShowValueKeyPicker(candidate, numericColumns)
+    || shouldShowDimensionPicker(candidate, dimensionColumns);
 }
 
 function shouldCompactProportionPoints(candidate: ChartCandidate): boolean {
@@ -471,11 +523,63 @@ function findNumericColumns(rows: DataRow[]): string[] {
   return [...keys].filter((key) => rows.some((row) => toNumber(row[key]) !== null));
 }
 
-function withSelectedValueKey(candidate: ChartCandidate, valueKey: string | null): ChartCandidate {
-  if (!valueKey || candidate.id === 'scatter') return candidate;
-  if (candidate.yKey) return { ...candidate, yKey: valueKey };
-  if (candidate.valueKey) return { ...candidate, valueKey };
-  return candidate;
+function findDimensionColumns(rows: DataRow[], numericColumns: string[]): string[] {
+  const numericColumnSet = new Set(numericColumns);
+  const keys = new Set(rows.flatMap((row) => Object.keys(row)));
+  return [...keys].filter((key) => !numericColumnSet.has(key) && rows.some((row) => row[key] !== null && String(row[key]).trim().length > 0));
+}
+
+function findDateColumns(rows: DataRow[]): string[] {
+  const keys = new Set(rows.flatMap((row) => Object.keys(row)));
+  return [...keys].filter((key) => {
+    const values = rows.map((row) => row[key]).filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+    if (values.length === 0) return false;
+    const sample = values.slice(0, 12);
+    return sample.filter((value) => parseDateParts(value) !== null).length / sample.length >= 0.75;
+  });
+}
+
+function withSelectedKeys(
+  candidate: ChartCandidate,
+  valueKey: string | null,
+  dimensionKey: string | null,
+  dateColumns: string[],
+): ChartCandidate {
+  let nextCandidate = candidate;
+  if (valueKey && candidate.id !== 'scatter') {
+    if (candidate.yKey) nextCandidate = { ...nextCandidate, yKey: valueKey };
+    if (candidate.valueKey) nextCandidate = { ...nextCandidate, valueKey };
+  }
+
+  if (!dimensionKey || !supportsDimensionOverride(candidate)) return nextCandidate;
+
+  if (dateColumns.includes(dimensionKey)) {
+    return {
+      ...nextCandidate,
+      xKey: dimensionKey,
+      xAxisType: 'date',
+      categoryKey: undefined,
+    };
+  }
+
+  return {
+    ...nextCandidate,
+    xKey: undefined,
+    xAxisType: undefined,
+    categoryKey: dimensionKey,
+  };
+}
+
+function supportsDimensionOverride(candidate: ChartCandidate): boolean {
+  return candidate.id === 'bar' || candidate.id === 'pie' || candidate.id === 'donut' || candidate.id === 'radar';
+}
+
+function parseDateParts(value: string) {
+  const trimmed = value.trim();
+  const isoMatch = trimmed.match(/^(\d{4})[-/](\d{1,2})(?:[-/](\d{1,2}))?/u);
+  if (isoMatch) return true;
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : true;
 }
 
 function toNumber(value: DataValue): number | null {

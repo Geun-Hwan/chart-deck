@@ -31,7 +31,7 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           title: '막대 차트',
           status: categoryColumn ? 'ready' : 'warning',
           reason: categoryColumn
-            ? `${categoryColumn.name}별 ${firstNumber.name} 값을 비교합니다. 같은 범주는 합산해 보여줍니다.`
+            ? `${categoryColumn.name}별 ${firstNumber.name} 값을 비교합니다. 날짜 컬럼이 있으면 월별 같은 기준으로도 바꿔볼 수 있습니다.`
             : `${labelColumn.name} 컬럼을 라벨로 삼아 ${firstNumber.name} 값을 비교합니다.`,
           categoryKey: labelColumn.name,
           valueKey: firstNumber.name,
