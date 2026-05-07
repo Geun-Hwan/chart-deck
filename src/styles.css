@@ -1399,6 +1399,25 @@ th {
   pointer-events: none;
 }
 
+.chart-reset-button {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  border: 1px solid rgba(123, 199, 255, 0.28);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(8, 10, 16, 0.78);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.chart-reset-button:hover {
+  border-color: rgba(214, 255, 92, 0.45);
+  background: rgba(20, 26, 38, 0.92);
+}
+
 .chart-zoom-surface {
   min-width: 100%;
 }

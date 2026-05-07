@@ -1,4 +1,4 @@
-import { type MouseEvent, type WheelEvent, useEffect, useMemo, useState } from 'react';
+import { type MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { aggregateTimeSeriesPoints } from '../../lib/chartTimeGrouping';
 import { sampleChartPoints } from '../../lib/chartSampling';
 import { applyChartZoomRange, formatChartZoomRange, getDefaultChartZoomRange, getNextChartZoomRange, type ChartZoomRange } from '../../lib/chartZoom';
@@ -70,6 +70,16 @@ export function CandidateChart({ candidate, rows }: Props) {
   return chart;
 }
 
+type ChartViewportProps = {
+  ariaLabel: string;
+  activeZoomRange: ChartZoomRange;
+  totalCount: number;
+  dragSelection: { startX: number; currentX: number } | null;
+  onDragSelectionChange: (selection: { startX: number; currentX: number } | null) => void;
+  onZoomChange: (range: ChartZoomRange | null) => void;
+  children: React.ReactNode;
+};
+
 function preparePoints(
   candidate: ChartCandidate,
   rows: DataRow[],
@@ -138,21 +148,16 @@ function renderChart(
           {sampled.originalCount.toLocaleString('ko-KR')}개 중 {sampled.sampledCount.toLocaleString('ko-KR')}개 지점을 균등 샘플링해 표시합니다.
         </p>
       ) : null}
-      <div
-        className="chart-zoom-viewport"
-        data-testid="chart-zoom-viewport"
-        role="application"
-        aria-label="마우스 휠과 드래그로 차트 데이터 범위를 조절"
-        tabIndex={0}
-        onWheel={(event) => handleChartWheel(event, activeZoomRange, visiblePoints.length, onChartZoomRangeChange)}
-        onMouseDown={(event) => handleChartDragStart(event, onDragSelectionChange)}
-        onMouseMove={(event) => handleChartDragMove(event, dragSelection, onDragSelectionChange)}
-        onMouseUp={(event) => handleChartDragEnd(event, dragSelection, zoomed.range, zoomed.points.length, onChartZoomRangeChange, onDragSelectionChange)}
-        onMouseLeave={(event) => handleChartDragEnd(event, dragSelection, zoomed.range, zoomed.points.length, onChartZoomRangeChange, onDragSelectionChange)}
-        onDoubleClick={() => onChartZoomRangeChange(null)}
+      <ChartViewport
+        ariaLabel="마우스 휠과 드래그로 차트 데이터 범위를 조절"
+        activeZoomRange={activeZoomRange}
+        totalCount={visiblePoints.length}
+        dragSelection={dragSelection}
+        onDragSelectionChange={onDragSelectionChange}
+        onZoomChange={onChartZoomRangeChange}
       >
         <div className="chart-interaction-hint" data-testid="chart-zoom-label">
-          <span>휠 확대/축소 · 드래그 확대 · 더블클릭 초기화</span>
+          <span>드래그 확대 · 더블클릭 초기화 · 휠 미세 조정</span>
           <strong data-testid="chart-zoom-range">{formatChartZoomRange(zoomed.range, zoomed.originalCount)}</strong>
         </div>
         {dragSelection ? (
@@ -162,27 +167,17 @@ function renderChart(
             aria-hidden="true"
           />
         ) : null}
+        {chartZoomRange ? (
+          <button type="button" className="chart-reset-button" onClick={() => onChartZoomRangeChange(null)}>
+            전체로 돌아가기
+          </button>
+        ) : null}
         <div className="chart-zoom-surface" data-testid="chart-zoom-surface">
           {chart}
         </div>
-      </div>
+      </ChartViewport>
     </div>
   );
-}
-
-function handleChartWheel(
-  event: WheelEvent<HTMLDivElement>,
-  activeRange: ChartZoomRange,
-  totalCount: number,
-  onChange: (range: ChartZoomRange | null) => void,
-) {
-  if (Math.abs(event.deltaY) < 2 || totalCount <= 0) return;
-  event.preventDefault();
-  const bounds = event.currentTarget.getBoundingClientRect();
-  const anchorRatio = bounds.width > 0 ? (event.clientX - bounds.left) / bounds.width : 0.5;
-  const nextRange = getNextChartZoomRange(activeRange, totalCount, event.deltaY < 0 ? 'in' : 'out', anchorRatio);
-  const isDefault = nextRange.start === 0 && nextRange.end === totalCount;
-  onChange(isDefault ? null : nextRange);
 }
 
 function TimeGranularityToolbar({
@@ -211,6 +206,54 @@ function TimeGranularityToolbar({
           {option.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+function ChartViewport({
+  ariaLabel,
+  activeZoomRange,
+  totalCount,
+  dragSelection,
+  onDragSelectionChange,
+  onZoomChange,
+  children,
+}: ChartViewportProps) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < 8 || totalCount <= 0) return;
+      event.preventDefault();
+      const bounds = viewport.getBoundingClientRect();
+      const anchorRatio = bounds.width > 0 ? (event.clientX - bounds.left) / bounds.width : 0.5;
+      const nextRange = getNextChartZoomRange(activeZoomRange, totalCount, event.deltaY < 0 ? 'in' : 'out', anchorRatio);
+      const isDefault = nextRange.start === 0 && nextRange.end === totalCount;
+      onZoomChange(isDefault ? null : nextRange);
+    };
+
+    viewport.addEventListener('wheel', handleWheel, { passive: false });
+    return () => viewport.removeEventListener('wheel', handleWheel);
+  }, [activeZoomRange, onZoomChange, totalCount]);
+
+  return (
+    <div
+      ref={viewportRef}
+      className="chart-zoom-viewport"
+      data-testid="chart-zoom-viewport"
+      role="application"
+      aria-label={ariaLabel}
+      tabIndex={0}
+      onMouseDown={(event) => handleChartDragStart(event, onDragSelectionChange)}
+      onMouseMove={(event) => handleChartDragMove(event, dragSelection, onDragSelectionChange)}
+      onMouseUp={(event) => handleChartDragEnd(event, dragSelection, activeZoomRange, totalCount, onZoomChange, onDragSelectionChange)}
+      onMouseLeave={(event) => handleChartDragEnd(event, dragSelection, activeZoomRange, totalCount, onZoomChange, onDragSelectionChange)}
+      onDoubleClick={() => onZoomChange(null)}
+    >
+      {children}
     </div>
   );
 }
