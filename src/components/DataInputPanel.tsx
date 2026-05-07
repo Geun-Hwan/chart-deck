@@ -80,8 +80,8 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
       <div className="input-heading">
         <span>1</span>
         <div>
-          <h2 id="input-studio-title">차트 비교용 데이터를 불러오세요</h2>
-          <p>샘플 CSV로 먼저 살펴보고, 파일 선택이나 붙여넣기로 바로 이어서 비교할 수 있습니다.</p>
+          <h2 id="input-studio-title">데이터를 불러오세요</h2>
+          <p>샘플을 바로 열거나 CSV 파일과 텍스트를 넣어 차트를 확인할 수 있습니다.</p>
         </div>
       </div>
 
@@ -100,7 +100,7 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
               onClick={() => onLoadSample(sample)}
             >
               <span>{index === 0 ? '추천 샘플' : '샘플'}</span>
-              <strong>{sample.name.replace(/\s*CSV$/u, '')}</strong>
+              <strong>{sample.name}</strong>
               <small>{sample.description}</small>
             </button>
           ))}
@@ -115,7 +115,7 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
         <div className="input-actions" role="toolbar" aria-label="데이터 입력 바로가기">
           <label className="file-action">
             <span>CSV 파일 선택</span>
-            <small>파일 내용은 브라우저 안에서만 읽고 서버로 보내지 않습니다.</small>
+            <small>파일은 브라우저 안에서만 읽습니다.</small>
             <input type="file" accept=".csv,text/csv,text/plain" onChange={handleFileChange} />
           </label>
 
@@ -129,7 +129,7 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
             ref={pasteToggleRef}
             onClick={() => setIsPasteOpen((value) => !value)}
           >
-            CSV 붙여넣기
+            텍스트 붙여넣기
           </button>
 
           <button type="button" className="clear-button" onClick={onClear} disabled={inputText.trim().length === 0}>
@@ -159,7 +159,7 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
           >
             <div className="paste-dialog__header">
               <div>
-                <p className="eyebrow">Quick paste</p>
+                <p className="eyebrow">텍스트 입력</p>
                 <h3 id="csv-paste-title">CSV 텍스트 붙여넣기</h3>
               </div>
               <button type="button" className="dialog-close" ref={pasteCloseRef} onClick={closePasteDialog}>
@@ -170,7 +170,7 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
             <div className="text-input paste-dialog__body">
               <label htmlFor="csv-textarea">CSV 텍스트 붙여넣기</label>
               <p id="csv-paste-description">
-                붙여넣는 즉시 차트 비교에 반영됩니다. 데이터는 브라우저 안에서만 처리됩니다.
+                붙여넣은 내용은 바로 반영되며 브라우저 안에서만 처리됩니다.
               </p>
               <textarea
                 id="csv-textarea"

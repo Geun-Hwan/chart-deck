@@ -15,10 +15,12 @@ const profiles: ColumnProfile[] = [
 describe('chartCandidates', () => {
   it('기본 차트 후보를 생성한다', () => {
     const candidates = buildChartCandidates(profiles);
-    expect(candidates).toHaveLength(5);
+    expect(candidates).toHaveLength(7);
     expect(candidates.find((candidate) => candidate.id === 'bar')?.status).toBe('ready');
     expect(candidates.find((candidate) => candidate.id === 'line')).toMatchObject({ status: 'ready', xAxisType: 'date' });
     expect(candidates.find((candidate) => candidate.id === 'scatter')?.status).toBe('ready');
+    expect(candidates.find((candidate) => candidate.id === 'donut')?.status).toBe('ready');
+    expect(candidates.find((candidate) => candidate.id === 'radar')?.status).toBe('ready');
   });
 
   it('부적합한 후보는 placeholder로 표시한다', () => {

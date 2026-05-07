@@ -25,7 +25,7 @@ export type ColumnProfile = {
 
 export type ChartStatus = 'ready' | 'warning' | 'placeholder' | 'error';
 
-export type ChartType = 'bar' | 'line' | 'scatter' | 'pie' | 'area';
+export type ChartType = 'bar' | 'line' | 'scatter' | 'pie' | 'area' | 'donut' | 'radar';
 export type TimeGranularity = 'day' | 'month' | 'year';
 
 export type ChartCandidate = {

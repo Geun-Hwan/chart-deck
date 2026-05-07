@@ -123,6 +123,31 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           status: 'placeholder',
           reason: '숫자형 컬럼 1개 이상이 필요합니다.',
         },
+    labelColumn && firstNumber
+      ? {
+          id: 'donut',
+          title: '도넛 차트',
+          status: categoryColumn ? 'ready' : 'warning',
+          reason: categoryColumn
+            ? `${categoryColumn.name} 범주별 ${firstNumber.name} 비중을 도넛 형태로 볼 수 있습니다.`
+            : `${labelColumn.name} 값을 임시 범주로 묶어 ${firstNumber.name} 비중을 도넛 형태로 보여줍니다.`,
+          categoryKey: labelColumn.name,
+          valueKey: firstNumber.name,
+        }
+      : firstNumber
+        ? {
+            id: 'donut',
+            title: '도넛 차트',
+            status: 'warning',
+            reason: '범주 컬럼은 없지만 행 순서별 숫자 비중을 도넛 형태로 임시 표시합니다.',
+            valueKey: firstNumber.name,
+          }
+      : {
+          id: 'donut',
+          title: '도넛 차트',
+          status: 'placeholder',
+          reason: '숫자형 컬럼 1개 이상이 필요합니다.',
+        },
     dateColumn && firstNumber
       ? {
           id: 'area',
@@ -147,14 +172,39 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           status: 'placeholder',
           reason: '날짜형 컬럼과 숫자형 컬럼이 필요합니다.',
         },
+    labelColumn && firstNumber
+      ? {
+          id: 'radar',
+          title: '레이더 차트',
+          status: categoryColumn ? 'ready' : 'warning',
+          reason: categoryColumn
+            ? `${categoryColumn.name} 범주별 ${firstNumber.name} 차이를 방사형으로 비교할 수 있습니다.`
+            : `${labelColumn.name} 값을 임시 범주로 삼아 ${firstNumber.name} 차이를 방사형으로 비교합니다.`,
+          categoryKey: labelColumn.name,
+          valueKey: firstNumber.name,
+        }
+      : firstNumber
+        ? {
+            id: 'radar',
+            title: '레이더 차트',
+            status: 'warning',
+            reason: '범주 컬럼은 없지만 행 순서를 기준으로 숫자 차이를 방사형으로 표시합니다.',
+            valueKey: firstNumber.name,
+          }
+      : {
+          id: 'radar',
+          title: '레이더 차트',
+          status: 'placeholder',
+          reason: '숫자형 컬럼 1개 이상이 필요합니다.',
+        },
   ];
 
   return sortChartCandidates(candidates, Boolean(dateColumn && firstNumber));
 }
 
 export function sortChartCandidates(candidates: ChartCandidate[], preferTimeSeries = false): ChartCandidate[] {
-  const defaultPriority: Record<ChartCandidate['id'], number> = { bar: 0, line: 1, area: 2, scatter: 3, pie: 4 };
-  const timeSeriesPriority: Record<ChartCandidate['id'], number> = { line: 0, area: 1, bar: 2, scatter: 3, pie: 4 };
+  const defaultPriority: Record<ChartCandidate['id'], number> = { bar: 0, line: 1, area: 2, scatter: 3, pie: 4, donut: 5, radar: 6 };
+  const timeSeriesPriority: Record<ChartCandidate['id'], number> = { line: 0, area: 1, bar: 2, scatter: 3, pie: 4, donut: 5, radar: 6 };
   const priority = preferTimeSeries ? timeSeriesPriority : defaultPriority;
 
   return [...candidates].sort((a, b) => {

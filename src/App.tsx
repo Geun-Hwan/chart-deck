@@ -11,12 +11,20 @@ import { parseDelimitedText } from './lib/parseDelimitedText';
 import type { SampleDataset } from './data/sampleData';
 import { sampleDatasets } from './data/sampleData';
 
+type ThemeMode = 'dark' | 'light';
+
 export function App() {
   const [inputText, setInputText] = useState('');
   const [sourceLabel, setSourceLabel] = useState('아직 데이터 없음');
   const [parseError, setParseError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [selectedChartId, setSelectedChartId] = useState<string | null>(null);
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    if (typeof window === 'undefined') return 'dark';
+    const storedTheme = window.localStorage.getItem('vibe-theme');
+    if (storedTheme === 'dark' || storedTheme === 'light') return storedTheme;
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  });
 
   const parsed = useMemo(() => {
     if (inputText.trim().length === 0) {
@@ -31,6 +39,8 @@ export function App() {
 
   const activeError = parseError ?? parsed.error;
   const activeWarnings = [...warnings, ...parsed.warnings];
+  const uniqueWarnings = useMemo(() => [...new Set(activeWarnings)], [activeWarnings]);
+  const hasData = parsed.data !== null;
   const profiles = useMemo(() => {
     if (!parsed.data) return [];
     return inferColumnTypes(parsed.data.columns, parsed.data.rows);
@@ -56,6 +66,11 @@ export function App() {
     setSourceLabel(sample.name);
     setInputText(sample.text);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem('vibe-theme', theme);
+  }, [theme]);
 
   function resetFeedback() {
     setParseError(null);
@@ -89,7 +104,7 @@ export function App() {
   }
 
   return (
-    <main className="observatory-shell">
+    <main className={`observatory-shell ${hasData ? 'has-data' : 'is-empty'}`}>
       <section className="primary-workspace" aria-label="차트와 데이터 입력 작업 영역">
         <section className="control-deck" aria-label="데이터 입력 영역">
           <div className="workspace-status" aria-label="현재 작업 상태">
@@ -97,10 +112,20 @@ export function App() {
               <span>현재 데이터</span>
               <strong aria-live="polite">{sourceLabel}</strong>
             </div>
-            <div className="workspace-signals" aria-label="처리 방식">
-              <span>브라우저 로컬 처리</span>
-              <span>서버 업로드 없음</span>
-              <span>1MB · 5,000행 제한</span>
+            <div className="workspace-status__aside">
+              <div className="theme-toggle" role="group" aria-label="화면 모드 선택">
+                <button type="button" className={theme === 'light' ? 'is-active' : ''} aria-pressed={theme === 'light'} onClick={() => setTheme('light')}>
+                  라이트
+                </button>
+                <button type="button" className={theme === 'dark' ? 'is-active' : ''} aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}>
+                  다크
+                </button>
+              </div>
+              <div className="workspace-signals" aria-label="처리 방식">
+                <span>로컬 처리</span>
+                <span>업로드 없음</span>
+                <span>1MB · 5,000행</span>
+              </div>
             </div>
           </div>
 
@@ -112,11 +137,14 @@ export function App() {
             onError={setParseError}
             onClear={handleClear}
           />
+
+          {activeError ? <Alert tone="danger" title="입력을 확인해주세요" messages={[activeError]} /> : null}
+          {uniqueWarnings.length > 0 ? <Alert tone="warning" title="데이터 해석 안내" messages={uniqueWarnings} /> : null}
         </section>
 
         <section className="visual-stage" aria-label="시각화 결과 영역">
           <ChartGrid
-            candidates={parsed.data ? candidates : []}
+            candidates={hasData ? candidates : []}
             rows={parsed.data?.rows ?? []}
             selectedId={selectedChartId ?? preferredChartId}
             onSelect={setSelectedChartId}
@@ -124,19 +152,16 @@ export function App() {
         </section>
       </section>
 
-      <section className="support-grid" aria-label="데이터 상태와 상세 정보">
-        <div className="telemetry-stack">
-          <SummaryDashboard summary={summary} sourceLabel={sourceLabel} />
+      {hasData ? (
+        <section className="support-grid" aria-label="데이터 상태와 상세 정보">
+          <SummaryDashboard summary={summary} />
 
-          {activeError ? <Alert tone="danger" title="입력을 확인해주세요" messages={[activeError]} /> : null}
-          {activeWarnings.length > 0 ? <Alert tone="warning" title="데이터 해석 안내" messages={[...new Set(activeWarnings)]} /> : null}
-        </div>
-
-        <aside className="forensics-stack" aria-label="컬럼 및 미리보기">
-          <ColumnSummary profiles={profiles} />
-          <DataPreview data={parsed.data} />
-        </aside>
-      </section>
+          <aside className="detail-grid" aria-label="컬럼 및 미리보기">
+            <ColumnSummary profiles={profiles} />
+            <DataPreview data={parsed.data} />
+          </aside>
+        </section>
+      ) : null}
     </main>
   );
 }

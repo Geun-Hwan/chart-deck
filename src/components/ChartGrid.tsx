@@ -17,11 +17,11 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
       <section className="empty-compass" aria-labelledby="empty-compass-title">
         <span aria-hidden="true">?</span>
         <h2 id="empty-compass-title">차트를 보려면 데이터가 필요합니다</h2>
-        <p>샘플 CSV를 선택하거나 내 CSV를 불러오면 큰 차트와 대안 후보를 바로 비교할 수 있습니다.</p>
+        <p>샘플을 열거나 CSV를 넣으면 추천 차트를 바로 볼 수 있습니다.</p>
         <div className="empty-compass__steps" aria-label="시작 순서">
           <article>
             <strong>1. 데이터 선택</strong>
-            <p>왼쪽 패널에서 샘플을 고르거나 CSV를 불러옵니다.</p>
+            <p>입력 패널에서 샘플을 고르거나 CSV를 불러옵니다.</p>
           </article>
           <article>
             <strong>2. 차트 자동 추천</strong>
@@ -50,10 +50,10 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
     <section className="chart-compass" aria-labelledby="chart-compass-title">
       <div className="compass-header">
         <div>
-          <p className="eyebrow">Chart Compass</p>
-          <h2 id="chart-compass-title">어떤 차트가 어울릴까요?</h2>
+          <p className="eyebrow">추천 차트</p>
+          <h2 id="chart-compass-title">어떤 차트가 잘 맞을까요?</h2>
         </div>
-        <p>선택한 차트를 넓게 확인하고, 아래 후보를 눌러 다른 표현도 비교해보세요.</p>
+        <p>가장 어울리는 차트를 먼저 보여주고, 다른 차트도 바로 비교할 수 있습니다.</p>
       </div>
       {selected ? (
         <div className="compass-main">
@@ -88,7 +88,7 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
           <span aria-hidden="true">→</span>
         </button>
       </div>
-      <p className="choice-scroll-hint">후보가 잘리면 좌우 이동 버튼이나 가로 스크롤로 다른 관점을 계속 확인하세요.</p>
+      <p className="choice-scroll-hint">다른 차트는 아래 목록에서 바로 바꿔볼 수 있습니다.</p>
     </section>
   );
 }

@@ -14,12 +14,12 @@ export function DataPreview({ data }: Props) {
     <section className="panel quiet-panel">
       <div className="section-heading compact-heading">
         <div>
-          <p className="eyebrow">Check</p>
+          <p className="eyebrow">미리보기</p>
           <h2>데이터가 이렇게 읽혔어요</h2>
         </div>
         <span className="soft-badge">보조 확인</span>
       </div>
-      <details className="preview-details">
+      <details className="preview-details" open>
         <summary>{data.rows.length.toLocaleString('ko-KR')}행 중 {previewRows.length}행 미리보기 · {data.delimiter === '\t' ? '탭' : '쉼표'} 구분</summary>
         <div className="table-wrap compact-table">
           <table>

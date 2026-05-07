@@ -1,13 +1,7 @@
-import { type WheelEvent, useEffect, useMemo, useState } from 'react';
+import { type MouseEvent, type WheelEvent, useEffect, useMemo, useState } from 'react';
 import { aggregateTimeSeriesPoints } from '../../lib/chartTimeGrouping';
 import { sampleChartPoints } from '../../lib/chartSampling';
 import { applyChartZoomRange, formatChartZoomRange, getDefaultChartZoomRange, getNextChartZoomRange, type ChartZoomRange } from '../../lib/chartZoom';
-import {
-  CHART_POINT_WINDOW_SIZE,
-  applyChartPointWindow,
-  chartPointWindowOptions,
-  type ChartPointWindowMode,
-} from '../../lib/chartPointWindow';
 import type { ChartCandidate, DataRow, DataValue, TimeGranularity } from '../../lib/dataTypes';
 import { WarningPlaceholder } from '../WarningPlaceholder';
 
@@ -33,17 +27,17 @@ const chartFrame = {
 };
 
 export function CandidateChart({ candidate, rows }: Props) {
-  const [windowMode, setWindowMode] = useState<ChartPointWindowMode>('all');
   const [chartZoomRange, setChartZoomRange] = useState<ChartZoomRange | null>(null);
   const [timeGranularity, setTimeGranularity] = useState<TimeGranularity>('day');
+  const [dragSelection, setDragSelection] = useState<{ startX: number; currentX: number } | null>(null);
   const prepared = useMemo(
-    () => preparePoints(candidate, rows, windowMode, timeGranularity),
-    [candidate, rows, windowMode, timeGranularity],
+    () => preparePoints(candidate, rows, timeGranularity),
+    [candidate, rows, timeGranularity],
   );
 
   useEffect(() => {
     setChartZoomRange(null);
-  }, [candidate.id, rows, windowMode, timeGranularity]);
+  }, [candidate.id, rows, timeGranularity]);
 
   useEffect(() => {
     setTimeGranularity('day');
@@ -57,11 +51,12 @@ export function CandidateChart({ candidate, rows }: Props) {
     candidate,
     prepared.points,
     prepared,
-    setWindowMode,
     timeGranularity,
     setTimeGranularity,
     chartZoomRange,
     setChartZoomRange,
+    dragSelection,
+    setDragSelection,
   );
   if (candidate.status === 'warning') {
     return (
@@ -78,7 +73,6 @@ export function CandidateChart({ candidate, rows }: Props) {
 function preparePoints(
   candidate: ChartCandidate,
   rows: DataRow[],
-  windowMode: ChartPointWindowMode,
   timeGranularity: TimeGranularity,
 ) {
   const rawPoints = toPoints(candidate, rows, candidate.id === 'scatter');
@@ -86,14 +80,10 @@ function preparePoints(
     ? aggregateTimeSeriesPoints(rawPoints, timeGranularity)
     : rawPoints;
   const allPoints = shouldAggregateCategoryPoints(candidate) ? aggregatePointsByLabel(timeGroupedPoints) : timeGroupedPoints;
-  const windowed = applyChartPointWindow(allPoints, windowMode);
 
   return {
-    points: windowed.points,
-    allPointCount: windowed.originalCount,
-    isWindowed: windowed.isWindowed,
-    note: windowed.note,
-    mode: windowed.mode,
+    points: allPoints,
+    allPointCount: allPoints.length,
   };
 }
 
@@ -101,11 +91,12 @@ function renderChart(
   candidate: ChartCandidate,
   visiblePoints: Point[],
   prepared: ReturnType<typeof preparePoints>,
-  onWindowModeChange: (mode: ChartPointWindowMode) => void,
   timeGranularity: TimeGranularity,
   onTimeGranularityChange: (granularity: TimeGranularity) => void,
   chartZoomRange: ChartZoomRange | null,
   onChartZoomRangeChange: (range: ChartZoomRange | null) => void,
+  dragSelection: { startX: number; currentX: number } | null,
+  onDragSelectionChange: (selection: { startX: number; currentX: number } | null) => void,
 ) {
   const activeZoomRange = chartZoomRange ?? getDefaultChartZoomRange(visiblePoints.length);
   const zoomed = applyChartZoomRange(visiblePoints, activeZoomRange);
@@ -127,26 +118,20 @@ function renderChart(
       case 'scatter':
         return <ScatterSvg points={points} />;
       case 'pie':
-        return <PieSvg points={points} />;
+        return <PieSvg points={points} donut={false} />;
+      case 'donut':
+        return <PieSvg points={points} donut />;
+      case 'radar':
+        return <RadarSvg points={points} />;
     }
   })();
 
   return (
     <div className="chart-render-frame">
-      {prepared.allPointCount > CHART_POINT_WINDOW_SIZE ? (
-        <div className="chart-control-row">
-          <ChartWindowToolbar activeMode={prepared.mode} onChange={onWindowModeChange} />
-        </div>
-      ) : null}
       {shouldAggregateTimeSeriesPoints(candidate) ? (
         <div className="chart-control-row">
           <TimeGranularityToolbar activeGranularity={timeGranularity} onChange={onTimeGranularityChange} />
         </div>
-      ) : null}
-      {prepared.isWindowed ? (
-        <p className="chart-filter-note" data-testid="chart-filter-note">
-          {prepared.allPointCount.toLocaleString('ko-KR')}개 중 {prepared.note}
-        </p>
       ) : null}
       {sampled.isSampled ? (
         <p className="sampling-note" data-testid="sampling-note">
@@ -157,15 +142,26 @@ function renderChart(
         className="chart-zoom-viewport"
         data-testid="chart-zoom-viewport"
         role="application"
-        aria-label="마우스 휠로 차트 데이터 범위 확대 또는 축소"
+        aria-label="마우스 휠과 드래그로 차트 데이터 범위를 조절"
         tabIndex={0}
         onWheel={(event) => handleChartWheel(event, activeZoomRange, visiblePoints.length, onChartZoomRangeChange)}
+        onMouseDown={(event) => handleChartDragStart(event, onDragSelectionChange)}
+        onMouseMove={(event) => handleChartDragMove(event, dragSelection, onDragSelectionChange)}
+        onMouseUp={(event) => handleChartDragEnd(event, dragSelection, zoomed.range, zoomed.points.length, onChartZoomRangeChange, onDragSelectionChange)}
+        onMouseLeave={(event) => handleChartDragEnd(event, dragSelection, zoomed.range, zoomed.points.length, onChartZoomRangeChange, onDragSelectionChange)}
         onDoubleClick={() => onChartZoomRangeChange(null)}
       >
         <div className="chart-interaction-hint" data-testid="chart-zoom-label">
-          <span>휠로 데이터 범위 확대/축소 · 더블클릭 초기화</span>
+          <span>휠 확대/축소 · 드래그 확대 · 더블클릭 초기화</span>
           <strong data-testid="chart-zoom-range">{formatChartZoomRange(zoomed.range, zoomed.originalCount)}</strong>
         </div>
+        {dragSelection ? (
+          <div
+            className="chart-drag-selection"
+            style={buildDragSelectionStyle(dragSelection.startX, dragSelection.currentX)}
+            aria-hidden="true"
+          />
+        ) : null}
         <div className="chart-zoom-surface" data-testid="chart-zoom-surface">
           {chart}
         </div>
@@ -187,30 +183,6 @@ function handleChartWheel(
   const nextRange = getNextChartZoomRange(activeRange, totalCount, event.deltaY < 0 ? 'in' : 'out', anchorRatio);
   const isDefault = nextRange.start === 0 && nextRange.end === totalCount;
   onChange(isDefault ? null : nextRange);
-}
-
-function ChartWindowToolbar({
-  activeMode,
-  onChange,
-}: {
-  activeMode: ChartPointWindowMode;
-  onChange: (mode: ChartPointWindowMode) => void;
-}) {
-  return (
-    <div className="chart-window-toolbar" role="group" aria-label="차트 표시 범위">
-      {chartPointWindowOptions.map((option) => (
-        <button
-          key={option.mode}
-          type="button"
-          className={activeMode === option.mode ? 'is-active' : ''}
-          aria-pressed={activeMode === option.mode}
-          onClick={() => onChange(option.mode)}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
 }
 
 function TimeGranularityToolbar({
@@ -241,6 +213,60 @@ function TimeGranularityToolbar({
       ))}
     </div>
   );
+}
+
+function handleChartDragStart(
+  event: MouseEvent<HTMLDivElement>,
+  onChange: (selection: { startX: number; currentX: number } | null) => void,
+) {
+  if (event.button !== 0) return;
+  onChange({ startX: event.nativeEvent.offsetX, currentX: event.nativeEvent.offsetX });
+}
+
+function handleChartDragMove(
+  event: MouseEvent<HTMLDivElement>,
+  dragSelection: { startX: number; currentX: number } | null,
+  onChange: (selection: { startX: number; currentX: number } | null) => void,
+) {
+  if (!dragSelection) return;
+  onChange({ ...dragSelection, currentX: event.nativeEvent.offsetX });
+}
+
+function handleChartDragEnd(
+  event: MouseEvent<HTMLDivElement>,
+  dragSelection: { startX: number; currentX: number } | null,
+  activeRange: ChartZoomRange,
+  visibleCount: number,
+  onZoomChange: (range: ChartZoomRange | null) => void,
+  onSelectionChange: (selection: { startX: number; currentX: number } | null) => void,
+) {
+  if (!dragSelection) return;
+  const bounds = event.currentTarget.getBoundingClientRect();
+  const minX = Math.min(dragSelection.startX, dragSelection.currentX);
+  const maxX = Math.max(dragSelection.startX, dragSelection.currentX);
+  if (maxX - minX < 18 || bounds.width <= 0 || visibleCount <= 1) {
+    onSelectionChange(null);
+    return;
+  }
+
+  const startRatio = clamp(minX / bounds.width, 0, 1);
+  const endRatio = clamp(maxX / bounds.width, 0, 1);
+  const localStart = Math.floor(startRatio * (visibleCount - 1));
+  const localEnd = Math.ceil(endRatio * visibleCount);
+  const nextStart = clamp(activeRange.start + localStart, 0, activeRange.end - 1);
+  const nextEnd = clamp(activeRange.start + Math.max(localEnd, localStart + 2), nextStart + 1, activeRange.end);
+  onZoomChange({ start: nextStart, end: nextEnd });
+  onSelectionChange(null);
+}
+
+function buildDragSelectionStyle(startX: number, currentX: number) {
+  const left = Math.min(startX, currentX);
+  const width = Math.abs(currentX - startX);
+  return { left: `${left}px`, width: `${width}px` };
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
 }
 
 function toPoints(candidate: ChartCandidate, rows: DataRow[], useNumericX = false): Point[] {
@@ -401,14 +427,15 @@ function ScatterSvg({ points }: { points: Point[] }) {
   );
 }
 
-function PieSvg({ points }: { points: Point[] }) {
+function PieSvg({ points, donut }: { points: Point[]; donut: boolean }) {
   const width = 640;
   const height = 280;
   const total = points.reduce((sum, point) => sum + Math.max(point.value, 0), 0) || 1;
   let cursor = -90;
+  const chartLabel = donut ? '도넛 차트' : '파이 차트';
 
   return (
-    <svg className="native-chart" data-testid="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`파이 차트 시각화, ${points.length}개 지점`}>
+    <svg className="native-chart" data-testid="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${chartLabel} 시각화, ${points.length}개 지점`}>
       <circle cx="180" cy="140" r="96" fill="#f8fafc" />
       {points.map((point, index) => {
         const angle = (Math.max(point.value, 0) / total) * 360;
@@ -416,10 +443,62 @@ function PieSvg({ points }: { points: Point[] }) {
         cursor += angle;
         return <path key={`${point.label}-${index}`} d={path} fill={palette[index % palette.length]} stroke="#fff" strokeWidth="4" />;
       })}
+      {donut ? <circle cx="180" cy="140" r="44" fill="var(--chart-surface-hole)" /> : null}
       {points.slice(0, 5).map((point, index) => (
         <g key={`${point.label}-legend`}>
           <rect x="340" y={72 + index * 34} width="18" height="18" rx="5" fill={palette[index % palette.length]} />
           <text x="370" y={86 + index * 34}>{shortLabel(point.label)} · {Math.round((point.value / total) * 100)}%</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function RadarSvg({ points }: { points: Point[] }) {
+  const width = 640;
+  const height = 320;
+  const cx = 220;
+  const cy = 160;
+  const radius = 110;
+  const maxValue = Math.max(...points.map((point) => point.value), 1);
+  const ringCount = 4;
+  const coordinates = points.map((point, index) => {
+    const angle = ((Math.PI * 2) / points.length) * index - Math.PI / 2;
+    const valueRadius = (Math.max(point.value, 0) / maxValue) * radius;
+    return {
+      label: point.label,
+      x: cx + Math.cos(angle) * valueRadius,
+      y: cy + Math.sin(angle) * valueRadius,
+      axisX: cx + Math.cos(angle) * (radius + 22),
+      axisY: cy + Math.sin(angle) * (radius + 22),
+      guideX: cx + Math.cos(angle) * radius,
+      guideY: cy + Math.sin(angle) * radius,
+    };
+  });
+  const polygon = coordinates.map((point) => `${point.x},${point.y}`).join(' ');
+
+  return (
+    <svg className="native-chart" data-testid="chart-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`레이더 차트 시각화, ${points.length}개 지점`}>
+      {Array.from({ length: ringCount }, (_, index) => {
+        const scale = (index + 1) / ringCount;
+        const ring = coordinates.map((point, pointIndex) => {
+          const angle = ((Math.PI * 2) / points.length) * pointIndex - Math.PI / 2;
+          const x = cx + Math.cos(angle) * radius * scale;
+          const y = cy + Math.sin(angle) * radius * scale;
+          return `${x},${y}`;
+        }).join(' ');
+        return <polygon key={scale} points={ring} fill="none" stroke="rgba(159, 176, 200, 0.22)" strokeDasharray="4 6" />;
+      })}
+      {coordinates.map((point) => (
+        <line key={`${point.label}-axis`} x1={cx} y1={cy} x2={point.guideX} y2={point.guideY} stroke="rgba(184, 201, 227, 0.3)" />
+      ))}
+      <polygon points={polygon} fill="rgba(96, 165, 250, 0.24)" stroke="#2563eb" strokeWidth="4" />
+      {coordinates.map((point, index) => (
+        <g key={`${point.label}-${index}`}>
+          <circle cx={point.x} cy={point.y} r="6" fill="#b6f24a" stroke="#101827" strokeWidth="3" />
+          <text className="chart-axis-label" data-axis="x" x={point.axisX} y={point.axisY} textAnchor="middle">
+            {shortLabel(point.label)}
+          </text>
         </g>
       ))}
     </svg>

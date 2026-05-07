@@ -12,20 +12,20 @@ export type SampleDataset = {
 export const sampleDatasets: SampleDataset[] = [
   {
     id: 'monthly-sales',
-    name: '월별 매출 CSV',
-    description: '날짜 흐름, 매출, 방문자 수를 비교하는 기본 CSV입니다.',
+    name: '월별 매출',
+    description: '날짜 흐름과 매출 추이를 바로 확인할 수 있습니다.',
     text: monthlySales,
   },
   {
     id: 'category-metrics',
-    name: '카테고리 지표 CSV',
-    description: '범주와 숫자 지표로 막대/파이 차트를 확인하는 CSV입니다.',
+    name: '카테고리 지표',
+    description: '범주별 비교와 비중 차트를 확인할 수 있습니다.',
     text: categoryMetrics,
   },
   {
     id: 'large-timeseries',
-    name: '대량 시계열 CSV',
-    description: '120행 데이터를 균등 샘플링해 큰 데이터 대응을 확인합니다.',
+    name: '대량 시계열',
+    description: '많은 지점을 샘플링하고 확대해 볼 수 있습니다.',
     text: largeTimeseries,
   },
 ];

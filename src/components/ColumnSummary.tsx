@@ -25,7 +25,7 @@ export function ColumnSummary({ profiles }: Props) {
     <section className="panel quiet-panel">
       <div className="section-heading compact-heading">
         <div>
-          <p className="eyebrow">Step 2</p>
+          <p className="eyebrow">데이터 해석</p>
           <h2>데이터 이해</h2>
         </div>
         <span className="soft-badge">{profiles.length}개 컬럼</span>
