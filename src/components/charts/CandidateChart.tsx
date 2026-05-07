@@ -1,7 +1,7 @@
-import { type MouseEvent, useEffect, useMemo, useState } from 'react';
+import { type MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { aggregateTimeSeriesPoints } from '../../lib/chartTimeGrouping';
 import { sampleChartPoints } from '../../lib/chartSampling';
-import { applyChartZoomRange, formatChartZoomRange, getDefaultChartZoomRange, type ChartZoomRange } from '../../lib/chartZoom';
+import { applyChartZoomRange, formatChartZoomRange, getDefaultChartZoomRange, getNextChartZoomRange, type ChartZoomRange } from '../../lib/chartZoom';
 import type { ChartCandidate, DataRow, DataValue, TimeAggregationMethod, TimeGroupingMode } from '../../lib/dataTypes';
 import { WarningPlaceholder } from '../WarningPlaceholder';
 
@@ -32,6 +32,7 @@ export function CandidateChart({ candidate, rows }: Props) {
   const [timeAggregationMethod, setTimeAggregationMethod] = useState<TimeAggregationMethod>('sum');
   const [selectedValueKey, setSelectedValueKey] = useState<string | null>(candidate.yKey ?? candidate.valueKey ?? null);
   const [selectedDimensionKey, setSelectedDimensionKey] = useState<string | null>(candidate.xKey ?? candidate.categoryKey ?? null);
+  const [wheelZoomEnabled, setWheelZoomEnabled] = useState(false);
   const [dragSelection, setDragSelection] = useState<{ startX: number; currentX: number } | null>(null);
   const numericColumns = useMemo(() => findNumericColumns(rows), [rows]);
   const dimensionColumns = useMemo(() => findDimensionColumns(rows, numericColumns), [numericColumns, rows]);
@@ -47,13 +48,14 @@ export function CandidateChart({ candidate, rows }: Props) {
 
   useEffect(() => {
     setChartZoomRange(null);
-  }, [candidate.id, rows, timeAggregationMethod, timeGroupingMode]);
+  }, [candidate.id, rows, timeAggregationMethod, timeGroupingMode, selectedDimensionKey, selectedValueKey]);
 
   useEffect(() => {
     setTimeGroupingMode('raw');
     setTimeAggregationMethod('sum');
     setSelectedValueKey(candidate.yKey ?? candidate.valueKey ?? null);
     setSelectedDimensionKey(candidate.xKey ?? candidate.categoryKey ?? null);
+    setWheelZoomEnabled(false);
   }, [candidate.categoryKey, candidate.id, candidate.valueKey, candidate.xKey, candidate.yKey]);
 
   if (candidate.status === 'placeholder' || candidate.status === 'error') {
@@ -73,6 +75,8 @@ export function CandidateChart({ candidate, rows }: Props) {
     setTimeGroupingMode,
     timeAggregationMethod,
     setTimeAggregationMethod,
+    wheelZoomEnabled,
+    setWheelZoomEnabled,
     chartZoomRange,
     setChartZoomRange,
     dragSelection,
@@ -137,6 +141,8 @@ function renderChart(
   onTimeGroupingModeChange: (mode: TimeGroupingMode) => void,
   timeAggregationMethod: TimeAggregationMethod,
   onTimeAggregationMethodChange: (method: TimeAggregationMethod) => void,
+  wheelZoomEnabled: boolean,
+  onWheelZoomEnabledChange: (enabled: boolean) => void,
   chartZoomRange: ChartZoomRange | null,
   onChartZoomRangeChange: (range: ChartZoomRange | null) => void,
   dragSelection: { startX: number; currentX: number } | null,
@@ -217,9 +223,10 @@ function renderChart(
           dragSelection={dragSelection}
           onDragSelectionChange={onDragSelectionChange}
           onZoomChange={onChartZoomRangeChange}
+          wheelZoomEnabled={wheelZoomEnabled}
         >
           <div className="chart-interaction-hint" data-testid="chart-zoom-label">
-            <span>드래그로 구간 확대 · 더블클릭 초기화</span>
+            <span>{wheelZoomEnabled ? '스크롤 줌 켜짐 · 드래그 확대' : '드래그로 구간 확대 · 더블클릭 초기화'}</span>
             <strong data-testid="chart-zoom-range">{formatChartZoomRange(zoomed.range, zoomed.originalCount)}</strong>
           </div>
           {dragSelection ? (
@@ -233,6 +240,21 @@ function renderChart(
             <button type="button" className="chart-reset-button" onClick={() => onChartZoomRangeChange(null)}>
               전체로 돌아가기
             </button>
+          ) : null}
+          <button
+            type="button"
+            className={`chart-wheel-toggle ${wheelZoomEnabled ? 'is-active' : ''}`}
+            aria-pressed={wheelZoomEnabled}
+            onClick={() => onWheelZoomEnabledChange(!wheelZoomEnabled)}
+          >
+            {wheelZoomEnabled ? '스크롤 줌 끄기' : '스크롤 줌 켜기'}
+          </button>
+          {visiblePoints.length > 12 ? (
+            <RangeOverview
+              activeRange={activeZoomRange}
+              totalCount={visiblePoints.length}
+              onZoomChange={onChartZoomRangeChange}
+            />
           ) : null}
           <div className="chart-zoom-surface" data-testid="chart-zoom-surface">
             {chart}
@@ -377,10 +399,32 @@ function ChartViewport({
   dragSelection,
   onDragSelectionChange,
   onZoomChange,
+  wheelZoomEnabled,
   children,
-}: ChartViewportProps) {
+}: ChartViewportProps & { wheelZoomEnabled: boolean }) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport || !wheelZoomEnabled) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < 8 || totalCount <= 0) return;
+      event.preventDefault();
+      const bounds = viewport.getBoundingClientRect();
+      const anchorRatio = bounds.width > 0 ? (event.clientX - bounds.left) / bounds.width : 0.5;
+      const nextRange = getNextChartZoomRange(activeZoomRange, totalCount, event.deltaY < 0 ? 'in' : 'out', anchorRatio);
+      const isDefault = nextRange.start === 0 && nextRange.end === totalCount;
+      onZoomChange(isDefault ? null : nextRange);
+    };
+
+    viewport.addEventListener('wheel', handleWheel, { passive: false });
+    return () => viewport.removeEventListener('wheel', handleWheel);
+  }, [activeZoomRange, onZoomChange, totalCount, wheelZoomEnabled]);
+
   return (
     <div
+      ref={viewportRef}
       className="chart-zoom-viewport"
       data-testid="chart-zoom-viewport"
       role="application"
@@ -393,6 +437,36 @@ function ChartViewport({
       onDoubleClick={() => onZoomChange(null)}
     >
       {children}
+    </div>
+  );
+}
+
+function RangeOverview({
+  activeRange,
+  totalCount,
+  onZoomChange,
+}: {
+  activeRange: ChartZoomRange;
+  totalCount: number;
+  onZoomChange: (range: ChartZoomRange | null) => void;
+}) {
+  const startPercent = totalCount > 0 ? (activeRange.start / totalCount) * 100 : 0;
+  const widthPercent = totalCount > 0 ? ((activeRange.end - activeRange.start) / totalCount) * 100 : 100;
+  const canZoomOut = activeRange.start > 0 || activeRange.end < totalCount;
+
+  return (
+    <div className="chart-range-overview" aria-label="현재 표시 구간">
+      <div className="chart-range-track" aria-hidden="true">
+        <span style={{ left: `${startPercent}%`, width: `${widthPercent}%` }} />
+      </div>
+      <div className="chart-range-actions">
+        <button type="button" onClick={() => onZoomChange(zoomRangeByRatio(activeRange, totalCount, 0.72))}>
+          더 자세히
+        </button>
+        <button type="button" onClick={() => onZoomChange(canZoomOut ? zoomRangeByRatio(activeRange, totalCount, 1.4) : null)}>
+          넓게 보기
+        </button>
+      </div>
     </div>
   );
 }
@@ -449,6 +523,16 @@ function buildDragSelectionStyle(startX: number, currentX: number) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function zoomRangeByRatio(range: ChartZoomRange, totalCount: number, ratio: number): ChartZoomRange | null {
+  if (totalCount <= 1) return null;
+  const currentSize = range.end - range.start;
+  const nextSize = clamp(Math.round(currentSize * ratio), 2, totalCount);
+  const center = range.start + currentSize / 2;
+  const nextStart = clamp(Math.round(center - nextSize / 2), 0, totalCount - nextSize);
+  const nextEnd = nextStart + nextSize;
+  return nextStart === 0 && nextEnd === totalCount ? null : { start: nextStart, end: nextEnd };
 }
 
 function toPoints(candidate: ChartCandidate, rows: DataRow[], useNumericX = false): Point[] {

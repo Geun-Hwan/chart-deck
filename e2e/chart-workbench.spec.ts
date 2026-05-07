@@ -196,7 +196,7 @@ test('대량 차트는 별도 필터 버튼 없이 전체 범위를 유지한다
   await expect(page.getByTestId('sampling-note')).toContainText('120개 중 36개');
 });
 
-test('대량 차트는 휠 대신 드래그 확대 안내를 유지한다', async ({ page }) => {
+test('대량 차트는 스크롤 줌을 명시적으로 켜서 사용할 수 있다', async ({ page }) => {
   await page.goto('/');
 
   await page.getByLabel('CSV 파일 선택').setInputFiles(largeCsvPath);
@@ -207,6 +207,31 @@ test('대량 차트는 휠 대신 드래그 확대 안내를 유지한다', asyn
 
   await zoomViewport.hover();
   await page.mouse.wheel(0, -500);
+  await expect(page.getByTestId('chart-zoom-range')).toHaveText('전체 120개');
+
+  await page.getByRole('button', { name: '스크롤 줌 켜기' }).click();
+  await expect(page.getByRole('button', { name: '스크롤 줌 끄기' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('chart-zoom-label')).toContainText('스크롤 줌 켜짐');
+
+  await zoomViewport.hover();
+  await page.mouse.wheel(0, -500);
+  await expect(page.getByTestId('chart-zoom-range')).not.toHaveText('전체 120개');
+
+  await page.getByRole('button', { name: '전체로 돌아가기' }).click();
+  await expect(page.getByTestId('chart-zoom-range')).toHaveText('전체 120개');
+});
+
+test('대량 차트는 범위 미니 컨트롤로 더 자세히 볼 수 있다', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByLabel('CSV 파일 선택').setInputFiles(largeCsvPath);
+  await expect(page.getByTestId('chart-zoom-range')).toHaveText('전체 120개');
+  await expect(page.getByLabel('현재 표시 구간')).toBeVisible();
+
+  await page.getByRole('button', { name: '더 자세히' }).click();
+  await expect(page.getByTestId('chart-zoom-range')).not.toHaveText('전체 120개');
+
+  await page.getByRole('button', { name: '넓게 보기' }).click();
   await expect(page.getByTestId('chart-zoom-range')).toHaveText('전체 120개');
 });
 
