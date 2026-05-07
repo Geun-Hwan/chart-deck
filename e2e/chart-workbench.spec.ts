@@ -196,25 +196,18 @@ test('대량 차트는 별도 필터 버튼 없이 전체 범위를 유지한다
   await expect(page.getByTestId('sampling-note')).toContainText('120개 중 36개');
 });
 
-test('대량 차트는 마우스 휠로 데이터 표시 범위를 확대하고 되돌린다', async ({ page }) => {
+test('대량 차트는 휠 대신 드래그 확대 안내를 유지한다', async ({ page }) => {
   await page.goto('/');
 
   await page.getByLabel('CSV 파일 선택').setInputFiles(largeCsvPath);
   const zoomViewport = page.getByTestId('chart-zoom-viewport');
   await expect(zoomViewport).toBeVisible();
   await expect(page.getByTestId('chart-zoom-range')).toHaveText('전체 120개');
+  await expect(page.getByTestId('chart-zoom-label')).toContainText('드래그로 구간 확대');
 
   await zoomViewport.hover();
   await page.mouse.wheel(0, -500);
-  await expect(page.getByTestId('chart-zoom-range')).toContainText('/ 120');
-
-  await page.mouse.wheel(0, -500);
-  await page.mouse.wheel(0, -500);
-  await page.mouse.wheel(0, -500);
-  await expect(page.getByTestId('chart-zoom-range')).not.toHaveText('전체 120개');
-
-  await page.mouse.wheel(0, 500);
-  await expect(page.getByTestId('chart-zoom-range')).toContainText('/ 120');
+  await expect(page.getByTestId('chart-zoom-range')).toHaveText('전체 120개');
 });
 
 test('대량 차트는 드래그로 특정 구간만 확대할 수 있다', async ({ page }) => {
