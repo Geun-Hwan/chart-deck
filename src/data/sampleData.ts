@@ -25,7 +25,7 @@ export const sampleDatasets: SampleDataset[] = [
   {
     id: 'large-timeseries',
     name: '대량 시계열',
-    description: '많은 지점을 샘플링하고 확대해 볼 수 있습니다.',
+    description: '많은 지점을 전체 흐름과 구간 선택으로 확인할 수 있습니다.',
     text: largeTimeseries,
   },
 ];

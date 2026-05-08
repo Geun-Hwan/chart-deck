@@ -46,7 +46,7 @@
 
 ### 4. 대량 데이터 대응
 - 전체 데이터를 기준으로 차트를 유지
-- 표시 지점이 너무 많을 때는 균등 샘플링으로 렌더링
+- 5,000행 제한 안에서는 전체 지점을 그대로 렌더링
 - 선/영역/막대 차트는 Recharts Brush로 구간을 좁혀 볼 수 있음
 - 페이지 스크롤과 충돌하던 직접 구현 휠 줌/버튼 토글은 제거
 - 파이/도넛 차트는 비중 비교가 흔들리지 않도록 구간 확대를 적용하지 않음
@@ -103,9 +103,9 @@ npm run e2e
 
 최신 UI 스냅샷은 아래 파일 기준입니다.
 
-- `docs/ui-snapshots/20260508-1251-studio-empty-workspace.png`
-- `docs/ui-snapshots/20260508-1251-studio-sample-workspace.png`
-- `docs/ui-snapshots/20260508-1251-studio-large-sampled-workspace.png`
+- `docs/ui-snapshots/20260508-1359-studio-empty-workspace.png`
+- `docs/ui-snapshots/20260508-1359-studio-sample-workspace.png`
+- `docs/ui-snapshots/20260508-1359-studio-large-sampled-workspace.png`
 
 ## 프로젝트 의도
 

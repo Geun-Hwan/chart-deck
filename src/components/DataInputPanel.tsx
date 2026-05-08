@@ -78,10 +78,9 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
   return (
     <section className="input-studio" aria-labelledby="input-studio-title">
       <div className="input-heading">
-        <span>1</span>
         <div>
-          <h2 id="input-studio-title">데이터를 불러오세요</h2>
-          <p>샘플을 바로 열거나 CSV 파일과 텍스트를 넣어 차트를 확인할 수 있습니다.</p>
+          <h2 id="input-studio-title">데이터 불러오기</h2>
+          <p>샘플, 파일, 텍스트 중 하나를 선택하세요.</p>
         </div>
       </div>
 
@@ -91,15 +90,15 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
           <span>샘플 {sampleDatasets.length}개</span>
         </div>
         <div className="sample-stack" aria-label="샘플 데이터 선택">
-          {sampleDatasets.map((sample, index) => (
+          {sampleDatasets.map((sample) => (
             <button
               key={sample.id}
               type="button"
-              className={index === 0 ? 'sample-card hero-sample' : 'sample-card'}
+              className="sample-card"
               aria-label={`샘플 불러오기: ${sample.name}`}
               onClick={() => onLoadSample(sample)}
             >
-              <span>{index === 0 ? '기본 샘플' : '샘플'}</span>
+              <span>샘플</span>
               <strong>{sample.name}</strong>
               <small>{sample.description}</small>
             </button>

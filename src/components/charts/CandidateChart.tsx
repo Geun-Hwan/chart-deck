@@ -25,7 +25,6 @@ import {
   YAxis,
 } from 'recharts';
 import { aggregateTimeSeriesPoints } from '../../lib/chartTimeGrouping';
-import { sampleChartPoints } from '../../lib/chartSampling';
 import type { ChartCandidate, DataRow, DataValue, TimeAggregationMethod, TimeGroupingMode } from '../../lib/dataTypes';
 import { WarningPlaceholder } from '../WarningPlaceholder';
 
@@ -140,10 +139,7 @@ function renderChart({
   timeAggregationMethod,
   onTimeAggregationMethodChange,
 }: RenderChartArgs) {
-  const sampled = shouldSampleChart(candidate) ? sampleChartPoints(points) : { points, isSampled: false, originalCount: points.length, sampledCount: points.length };
-  const visiblePoints = sampled.points;
-
-  if (visiblePoints.length === 0) {
+  if (points.length === 0) {
     return <WarningPlaceholder status="warning" reason="표시할 수 있는 숫자 값이 부족합니다." />;
   }
 
@@ -175,12 +171,7 @@ function renderChart({
           ) : null}
         </ChartSettingsPanel>
       ) : null}
-      {sampled.isSampled ? (
-        <p className="sampling-note" data-testid="sampling-note">
-          {sampled.originalCount.toLocaleString('ko-KR')}개 중 {sampled.sampledCount.toLocaleString('ko-KR')}개 지점을 균등 샘플링해 표시합니다.
-        </p>
-      ) : null}
-      <ChartSurface candidate={candidate} points={visiblePoints} originalCount={sampled.originalCount} />
+      <ChartSurface candidate={candidate} points={points} />
     </div>
   );
 }
@@ -297,9 +288,9 @@ function TimeGroupingToolbar({
   );
 }
 
-function ChartSurface({ candidate, points, originalCount }: { candidate: ChartCandidate; points: Point[]; originalCount: number }) {
+function ChartSurface({ candidate, points }: { candidate: ChartCandidate; points: Point[] }) {
   const label = `${candidate.title} 시각화, ${points.length}개 지점`;
-  const showBrush = shouldShowBrush(candidate, points, originalCount);
+  const showBrush = shouldShowBrush(candidate, points);
 
   return (
     <div className="recharts-frame" data-testid="chart-svg" role="img" aria-label={label}>
@@ -330,7 +321,7 @@ function renderRecharts(candidate: ChartCandidate, points: Point[], showBrush: b
           <XAxis dataKey="label" tick={axisTick} interval="preserveStartEnd" />
           <YAxis tick={axisTick} tickFormatter={formatAxisValue} />
           <Tooltip content={<ChartTooltip />} />
-          <Line type="monotone" dataKey="value" stroke={palette[1]} strokeWidth={3} dot={{ r: 4, fill: palette[0] }} activeDot={{ r: 6 }} />
+          <Line type="monotone" dataKey="value" stroke={palette[1]} strokeWidth={3} dot={points.length <= 80 ? { r: 4, fill: palette[0] } : false} activeDot={{ r: 6 }} />
           {showBrush ? <Brush dataKey="label" height={24} travellerWidth={10} stroke={palette[1]} /> : null}
         </LineChart>
       );
@@ -347,7 +338,7 @@ function renderRecharts(candidate: ChartCandidate, points: Point[], showBrush: b
           <XAxis dataKey="label" tick={axisTick} interval="preserveStartEnd" />
           <YAxis tick={axisTick} tickFormatter={formatAxisValue} />
           <Tooltip content={<ChartTooltip />} />
-          <Area type="monotone" dataKey="value" stroke={palette[1]} strokeWidth={3} fill="url(#areaFill)" />
+          <Area type="monotone" dataKey="value" stroke={palette[1]} strokeWidth={3} fill="url(#areaFill)" dot={points.length <= 80 ? { r: 3, fill: palette[0] } : false} activeDot={{ r: 6 }} />
           {showBrush ? <Brush dataKey="label" height={24} travellerWidth={10} stroke={palette[1]} /> : null}
         </AreaChart>
       );
@@ -408,12 +399,8 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
   );
 }
 
-function shouldShowBrush(candidate: ChartCandidate, points: Point[], originalCount: number): boolean {
-  return (candidate.id === 'bar' || candidate.id === 'line' || candidate.id === 'area') && (points.length > 12 || originalCount > 36);
-}
-
-function shouldSampleChart(candidate: ChartCandidate): boolean {
-  return candidate.id === 'bar' || candidate.id === 'line' || candidate.id === 'area' || candidate.id === 'scatter';
+function shouldShowBrush(candidate: ChartCandidate, points: Point[]): boolean {
+  return (candidate.id === 'bar' || candidate.id === 'line' || candidate.id === 'area') && points.length > 24;
 }
 
 function shouldAggregateCategoryPoints(candidate: ChartCandidate): boolean {
