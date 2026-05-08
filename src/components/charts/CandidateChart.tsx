@@ -25,6 +25,7 @@ import {
   YAxis,
 } from 'recharts';
 import { aggregateTimeSeriesPoints } from '../../lib/chartTimeGrouping';
+import { planChartRendering } from '../../lib/chartRenderPlanning';
 import type { ChartCandidate, DataRow, DataValue, TimeAggregationMethod, TimeGroupingMode } from '../../lib/dataTypes';
 import { WarningPlaceholder } from '../WarningPlaceholder';
 
@@ -106,8 +107,7 @@ function preparePoints(
   const timeGroupedPoints = shouldAggregateTimeSeriesPoints(candidate) && timeGroupingMode !== 'raw'
     ? aggregateTimeSeriesPoints(rawPoints, timeGroupingMode, timeAggregationMethod)
     : rawPoints;
-  const categoryGroupedPoints = shouldAggregateCategoryPoints(candidate) ? aggregatePointsByLabel(timeGroupedPoints) : timeGroupedPoints;
-  return shouldCompactProportionPoints(candidate) ? compactProportionPoints(categoryGroupedPoints) : categoryGroupedPoints;
+  return shouldAggregateCategoryPoints(candidate) ? aggregatePointsByLabel(timeGroupedPoints) : timeGroupedPoints;
 }
 
 type RenderChartArgs = {
@@ -139,7 +139,9 @@ function renderChart({
   timeAggregationMethod,
   onTimeAggregationMethodChange,
 }: RenderChartArgs) {
-  if (points.length === 0) {
+  const renderPlan = planChartRendering(candidate.id, points);
+
+  if (renderPlan.points.length === 0) {
     return <WarningPlaceholder status="warning" reason="표시할 수 있는 숫자 값이 부족합니다." />;
   }
 
@@ -171,7 +173,12 @@ function renderChart({
           ) : null}
         </ChartSettingsPanel>
       ) : null}
-      <ChartSurface candidate={candidate} points={points} />
+      {renderPlan.notice ? (
+        <p className="render-notice" data-testid="render-notice">
+          {renderPlan.notice.originalCount.toLocaleString('ko-KR')}개 중 {renderPlan.notice.renderedCount.toLocaleString('ko-KR')}개를 렌더링합니다. {renderPlan.notice.reason}
+        </p>
+      ) : null}
+      <ChartSurface candidate={candidate} points={renderPlan.points} />
     </div>
   );
 }
@@ -314,6 +321,16 @@ function renderRecharts(candidate: ChartCandidate, points: Point[], showBrush: b
           {showBrush ? <Brush dataKey="label" height={24} travellerWidth={10} stroke={palette[1]} /> : null}
         </BarChart>
       );
+    case 'horizontalBar':
+      return (
+        <BarChart data={points} layout="vertical" margin={{ top: 20, right: 24, left: 24, bottom: 20 }}>
+          <CartesianGrid strokeDasharray="3 5" stroke="var(--chart-grid-line)" />
+          <XAxis type="number" tick={axisTick} tickFormatter={formatAxisValue} />
+          <YAxis type="category" dataKey="label" tick={axisTick} width={96} tickFormatter={shortLabel} />
+          <Tooltip content={<ChartTooltip />} />
+          <Bar dataKey="value" radius={[0, 10, 10, 0]} fill={palette[0]} />
+        </BarChart>
+      );
     case 'line':
       return (
         <LineChart data={points} margin={{ top: 20, right: 24, left: 8, bottom: 28 }}>
@@ -404,7 +421,7 @@ function shouldShowBrush(candidate: ChartCandidate, points: Point[]): boolean {
 }
 
 function shouldAggregateCategoryPoints(candidate: ChartCandidate): boolean {
-  return Boolean(candidate.categoryKey && (candidate.id === 'bar' || candidate.id === 'pie' || candidate.id === 'donut' || candidate.id === 'radar'));
+  return Boolean(candidate.categoryKey && (candidate.id === 'bar' || candidate.id === 'horizontalBar' || candidate.id === 'pie' || candidate.id === 'donut' || candidate.id === 'radar'));
 }
 
 function shouldAggregateTimeSeriesPoints(candidate: ChartCandidate): boolean {
@@ -418,7 +435,7 @@ function shouldShowValueKeyPicker(candidate: ChartCandidate, numericColumns: str
 
 function shouldShowDimensionPicker(candidate: ChartCandidate, dimensionColumns: string[]): boolean {
   if (dimensionColumns.length <= 1) return false;
-  return candidate.id === 'bar' || candidate.id === 'pie' || candidate.id === 'donut' || candidate.id === 'radar';
+  return candidate.id === 'bar' || candidate.id === 'horizontalBar' || candidate.id === 'pie' || candidate.id === 'donut' || candidate.id === 'radar';
 }
 
 function shouldShowChartSettings(candidate: ChartCandidate, numericColumns: string[], dimensionColumns: string[]): boolean {
@@ -427,9 +444,6 @@ function shouldShowChartSettings(candidate: ChartCandidate, numericColumns: stri
     || shouldShowDimensionPicker(candidate, dimensionColumns);
 }
 
-function shouldCompactProportionPoints(candidate: ChartCandidate): boolean {
-  return candidate.id === 'pie' || candidate.id === 'donut';
-}
 
 function aggregatePointsByLabel(points: Point[]): Point[] {
   const totals = new Map<string, Point>();
@@ -442,14 +456,6 @@ function aggregatePointsByLabel(points: Point[]): Point[] {
     current.value += point.value;
   }
   return [...totals.values()];
-}
-
-function compactProportionPoints(points: Point[], limit = 6): Point[] {
-  if (points.length <= limit) return points;
-  const sorted = [...points].sort((left, right) => Math.max(right.value, 0) - Math.max(left.value, 0));
-  const visible = sorted.slice(0, limit - 1);
-  const otherValue = sorted.slice(limit - 1).reduce((sum, point) => sum + Math.max(point.value, 0), 0);
-  return otherValue > 0 ? [...visible, { label: '기타', x: visible.length, value: otherValue }] : visible;
 }
 
 function findNumericColumns(rows: DataRow[]): string[] {
@@ -505,7 +511,7 @@ function withSelectedKeys(
 }
 
 function supportsDimensionOverride(candidate: ChartCandidate): boolean {
-  return candidate.id === 'bar' || candidate.id === 'pie' || candidate.id === 'donut' || candidate.id === 'radar';
+  return candidate.id === 'bar' || candidate.id === 'horizontalBar' || candidate.id === 'pie' || candidate.id === 'donut' || candidate.id === 'radar';
 }
 
 function parseDateParts(value: string) {

@@ -50,6 +50,31 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           status: 'placeholder',
           reason: '숫자형 컬럼 1개 이상이 필요합니다.',
         },
+    labelColumn && firstNumber
+      ? {
+          id: 'horizontalBar',
+          title: '가로 막대 차트',
+          status: categoryColumn ? 'ready' : 'warning',
+          reason: categoryColumn
+            ? `${categoryColumn.name}별 ${firstNumber.name} 값을 가로 방향으로 비교합니다. 항목이 많으면 상위 항목 중심으로 봅니다.`
+            : `${labelColumn.name} 컬럼을 라벨로 삼아 ${firstNumber.name} 값을 가로 방향으로 비교합니다.`,
+          categoryKey: labelColumn.name,
+          valueKey: firstNumber.name,
+        }
+      : firstNumber
+        ? {
+          id: 'horizontalBar',
+          title: '가로 막대 차트',
+          status: 'warning',
+          reason: '범주 컬럼이 없어 행 순서 기준으로 숫자 값을 가로 방향으로 비교합니다.',
+            valueKey: firstNumber.name,
+          }
+      : {
+          id: 'horizontalBar',
+          title: '가로 막대 차트',
+          status: 'placeholder',
+          reason: '숫자형 컬럼 1개 이상이 필요합니다.',
+        },
     dateColumn && firstNumber
       ? {
           id: 'line',
@@ -203,8 +228,8 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
 }
 
 export function sortChartCandidates(candidates: ChartCandidate[], preferTimeSeries = false): ChartCandidate[] {
-  const defaultPriority: Record<ChartCandidate['id'], number> = { bar: 0, line: 1, area: 2, scatter: 3, pie: 4, donut: 5, radar: 6 };
-  const timeSeriesPriority: Record<ChartCandidate['id'], number> = { line: 0, area: 1, bar: 2, scatter: 3, pie: 4, donut: 5, radar: 6 };
+  const defaultPriority: Record<ChartCandidate['id'], number> = { bar: 0, horizontalBar: 1, line: 2, area: 3, scatter: 4, pie: 5, donut: 6, radar: 7 };
+  const timeSeriesPriority: Record<ChartCandidate['id'], number> = { line: 0, area: 1, bar: 2, horizontalBar: 3, scatter: 4, pie: 5, donut: 6, radar: 7 };
   const priority = preferTimeSeries ? timeSeriesPriority : defaultPriority;
 
   return [...candidates].sort((a, b) => {

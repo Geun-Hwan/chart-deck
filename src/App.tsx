@@ -124,7 +124,7 @@ export function App() {
               <div className="workspace-signals" aria-label="처리 방식">
                 <span>로컬 처리</span>
                 <span>업로드 없음</span>
-                <span>1MB · 5,000행</span>
+                <span>5MB · 50,000행</span>
               </div>
             </div>
           </div>

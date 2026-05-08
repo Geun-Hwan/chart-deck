@@ -15,8 +15,9 @@ const profiles: ColumnProfile[] = [
 describe('chartCandidates', () => {
   it('기본 차트 후보를 생성한다', () => {
     const candidates = buildChartCandidates(profiles);
-    expect(candidates).toHaveLength(7);
+    expect(candidates).toHaveLength(8);
     expect(candidates.find((candidate) => candidate.id === 'bar')?.status).toBe('ready');
+    expect(candidates.find((candidate) => candidate.id === 'horizontalBar')?.status).toBe('ready');
     expect(candidates.find((candidate) => candidate.id === 'line')).toMatchObject({ status: 'ready', xAxisType: 'date' });
     expect(candidates.find((candidate) => candidate.id === 'scatter')?.status).toBe('ready');
     expect(candidates.find((candidate) => candidate.id === 'donut')?.status).toBe('ready');
@@ -59,6 +60,7 @@ describe('chartCandidates', () => {
       { name: 'score', type: 'number', nonEmptyCount: 3, uniqueCount: 3, confidence: 1, examples: ['10'] },
     ]);
     expect(candidates.find((candidate) => candidate.id === 'bar')).toMatchObject({ status: 'warning', valueKey: 'score' });
+    expect(candidates.find((candidate) => candidate.id === 'horizontalBar')).toMatchObject({ status: 'warning', valueKey: 'score' });
     expect(candidates.find((candidate) => candidate.id === 'line')).toMatchObject({ status: 'warning', yKey: 'score' });
     expect(candidates.find((candidate) => candidate.id === 'area')).toMatchObject({ status: 'warning', yKey: 'score' });
     expect(candidates.find((candidate) => candidate.id === 'scatter')?.status).toBe('placeholder');
@@ -70,6 +72,7 @@ describe('chartCandidates', () => {
       { name: 'score', type: 'number', nonEmptyCount: 3, uniqueCount: 3, confidence: 1, examples: ['10'] },
     ]);
     expect(candidates.find((candidate) => candidate.id === 'bar')).toMatchObject({ status: 'warning', categoryKey: 'name', valueKey: 'score' });
+    expect(candidates.find((candidate) => candidate.id === 'horizontalBar')).toMatchObject({ status: 'warning', categoryKey: 'name', valueKey: 'score' });
     expect(candidates.find((candidate) => candidate.id === 'pie')).toMatchObject({ status: 'warning', categoryKey: 'name', valueKey: 'score' });
   });
 

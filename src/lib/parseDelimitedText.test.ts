@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import monthlySales from '../test/fixtures/monthly-sales.csv?raw';
 import { parseDelimitedText } from './parseDelimitedText';
 
-const oversized = `name,value\n${Array.from({ length: 5001 }, (_, index) => `A${index},${index}`).join('\n')}`;
+const oversized = `name,value\n${Array.from({ length: 50001 }, (_, index) => `A${index},${index}`).join('\n')}`;
 
 describe('parseDelimitedText', () => {
   it('CSV 파일 fixture를 파싱한다', () => {
@@ -39,7 +39,7 @@ describe('parseDelimitedText', () => {
     const result = parseDelimitedText(oversized);
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.error).toContain('5,000행');
+    expect(result.error).toContain('50,000행');
   });
 
   it('복잡한 CSV 범위 경고를 반환한다', () => {

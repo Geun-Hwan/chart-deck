@@ -9,7 +9,7 @@
 - **입력**: 샘플 데이터, 로컬 CSV 파일, 텍스트 붙여넣기
 - **분석**: 컬럼 타입 추론, 행/컬럼 정보 요약
 - **시각화**: 여러 차트 후보 구성 및 비교
-- **상호작용**: 기준/값 컬럼 선택, 날짜 표시 방식 선택, Recharts Tooltip/Brush 기반 범위 탐색
+- **상호작용**: 기준/값 컬럼 선택, 날짜 표시 방식 선택, Recharts Tooltip/Brush 기반 범위 탐색, 대량 렌더링 보호
 - **테마**: 라이트 / 다크 모드 전환
 
 ## 핵심 기능
@@ -26,6 +26,7 @@
 - 선 차트
 - 영역 차트
 - 막대 차트
+- 가로 막대 차트
 - 산점도
 - 파이 차트
 - 도넛 차트
@@ -46,7 +47,8 @@
 
 ### 4. 대량 데이터 대응
 - 전체 데이터를 기준으로 차트를 유지
-- 5,000행 제한 안에서는 전체 지점을 그대로 렌더링
+- 일반 규모 데이터는 전체 지점을 그대로 렌더링
+- 수천~수만 건 데이터는 차트별 렌더링 보호를 적용
 - 선/영역/막대 차트는 Recharts Brush로 구간을 좁혀 볼 수 있음
 - 페이지 스크롤과 충돌하던 직접 구현 휠 줌/버튼 토글은 제거
 - 파이/도넛 차트는 비중 비교가 흔들리지 않도록 구간 확대를 적용하지 않음
@@ -68,7 +70,7 @@
 ## 데이터 처리 제한
 
 - 브라우저에서만 처리됩니다.
-- 기본 제한은 **1MB 또는 5,000행**입니다.
+- 기본 제한은 **5MB 또는 50,000행**입니다.
 - 단순 CSV / TSV 중심 입력을 가정합니다.
 
 ## 기술 스택
@@ -103,9 +105,9 @@ npm run e2e
 
 최신 UI 스냅샷은 아래 파일 기준입니다.
 
-- `docs/ui-snapshots/20260508-1359-studio-empty-workspace.png`
-- `docs/ui-snapshots/20260508-1359-studio-sample-workspace.png`
-- `docs/ui-snapshots/20260508-1359-studio-large-sampled-workspace.png`
+- `docs/ui-snapshots/20260508-1853-studio-empty-workspace.png`
+- `docs/ui-snapshots/20260508-1853-studio-sample-workspace.png`
+- `docs/ui-snapshots/20260508-1853-studio-large-sampled-workspace.png`
 
 ## 프로젝트 의도
 

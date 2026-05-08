@@ -1151,6 +1151,19 @@ th {
   font: inherit;
 }
 
+.render-notice {
+  margin: 0;
+  width: fit-content;
+  max-width: 100%;
+  padding: 7px 11px;
+  border: 1px solid rgba(123, 199, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(123, 199, 255, 0.08);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .recharts-frame {
   min-height: 360px;
   overflow: hidden;
