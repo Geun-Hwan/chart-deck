@@ -104,12 +104,6 @@ type ChartViewportProps = {
   children: React.ReactNode;
 };
 
-type ChartSettingsSummary = {
-  basisLabel: string | null;
-  valueLabel: string | null;
-  dateLabel: string | null;
-};
-
 function preparePoints(
   candidate: ChartCandidate,
   rows: DataRow[],
@@ -149,7 +143,6 @@ function renderChart(
   onDragSelectionChange: (selection: { startX: number; currentX: number } | null) => void,
 ) {
   const zoomEnabled = shouldEnableRangeZoom(candidate);
-  const settingsSummary = buildSettingsSummary(candidate, selectedDimensionKey, selectedValueKey, timeGroupingMode, timeAggregationMethod);
   const activeZoomRange = chartZoomRange ?? getDefaultChartZoomRange(visiblePoints.length);
   const zoomed = zoomEnabled ? applyChartZoomRange(visiblePoints, activeZoomRange) : {
     points: visiblePoints,
@@ -185,29 +178,29 @@ function renderChart(
   return (
     <div className="chart-render-frame">
       {shouldShowChartSettings(candidate, numericColumns, dimensionColumns) ? (
-        <ChartSettingsPanel summary={settingsSummary}>
-            {shouldShowDimensionPicker(candidate, dimensionColumns) ? (
-              <DimensionKeyPicker
-                dimensionColumns={dimensionColumns}
-                selectedDimensionKey={selectedDimensionKey}
-                onChange={onSelectedDimensionKeyChange}
-              />
-            ) : null}
-            {shouldShowValueKeyPicker(candidate, numericColumns) ? (
-              <ValueKeyPicker
-                numericColumns={numericColumns}
-                selectedValueKey={selectedValueKey}
-                onChange={onSelectedValueKeyChange}
-              />
-            ) : null}
-            {shouldAggregateTimeSeriesPoints(candidate) ? (
-              <TimeGroupingToolbar
-                activeMode={timeGroupingMode}
-                activeMethod={timeAggregationMethod}
-                onModeChange={onTimeGroupingModeChange}
-                onMethodChange={onTimeAggregationMethodChange}
-              />
-            ) : null}
+        <ChartSettingsPanel>
+          {shouldShowDimensionPicker(candidate, dimensionColumns) ? (
+            <DimensionKeyPicker
+              dimensionColumns={dimensionColumns}
+              selectedDimensionKey={selectedDimensionKey}
+              onChange={onSelectedDimensionKeyChange}
+            />
+          ) : null}
+          {shouldShowValueKeyPicker(candidate, numericColumns) ? (
+            <ValueKeyPicker
+              numericColumns={numericColumns}
+              selectedValueKey={selectedValueKey}
+              onChange={onSelectedValueKeyChange}
+            />
+          ) : null}
+          {shouldAggregateTimeSeriesPoints(candidate) ? (
+            <TimeGroupingToolbar
+              activeMode={timeGroupingMode}
+              activeMethod={timeAggregationMethod}
+              onModeChange={onTimeGroupingModeChange}
+              onMethodChange={onTimeAggregationMethodChange}
+            />
+          ) : null}
         </ChartSettingsPanel>
       ) : null}
       {sampled.isSampled ? (
@@ -226,7 +219,7 @@ function renderChart(
           wheelZoomEnabled={wheelZoomEnabled}
         >
           <div className="chart-interaction-hint" data-testid="chart-zoom-label">
-            <span>{wheelZoomEnabled ? '스크롤 줌 켜짐 · 드래그 확대' : '드래그로 구간 확대 · 더블클릭 초기화'}</span>
+            <span>{wheelZoomEnabled ? '스크롤 줌 켜짐' : '드래그 확대'}</span>
             <strong data-testid="chart-zoom-range">{formatChartZoomRange(zoomed.range, zoomed.originalCount)}</strong>
           </div>
           {dragSelection ? (
@@ -236,26 +229,21 @@ function renderChart(
               aria-hidden="true"
             />
           ) : null}
-          {chartZoomRange ? (
-            <button type="button" className="chart-reset-button" onClick={() => onChartZoomRangeChange(null)}>
-              전체로 돌아가기
+          <div className="chart-floating-tools">
+            <button
+              type="button"
+              className={`chart-tool-button ${wheelZoomEnabled ? 'is-active' : ''}`}
+              aria-pressed={wheelZoomEnabled}
+              onClick={() => onWheelZoomEnabledChange(!wheelZoomEnabled)}
+            >
+              {wheelZoomEnabled ? '스크롤 줌 끄기' : '스크롤 줌'}
             </button>
-          ) : null}
-          <button
-            type="button"
-            className={`chart-wheel-toggle ${wheelZoomEnabled ? 'is-active' : ''}`}
-            aria-pressed={wheelZoomEnabled}
-            onClick={() => onWheelZoomEnabledChange(!wheelZoomEnabled)}
-          >
-            {wheelZoomEnabled ? '스크롤 줌 끄기' : '스크롤 줌 켜기'}
-          </button>
-          {visiblePoints.length > 12 ? (
-            <RangeOverview
-              activeRange={activeZoomRange}
-              totalCount={visiblePoints.length}
-              onZoomChange={onChartZoomRangeChange}
-            />
-          ) : null}
+            {chartZoomRange ? (
+              <button type="button" className="chart-tool-button" onClick={() => onChartZoomRangeChange(null)}>
+                전체
+              </button>
+            ) : null}
+          </div>
           <div className="chart-zoom-surface" data-testid="chart-zoom-surface">
             {chart}
           </div>
@@ -270,21 +258,13 @@ function renderChart(
 }
 
 function ChartSettingsPanel({
-  summary,
   children,
 }: {
-  summary: ChartSettingsSummary;
   children: React.ReactNode;
 }) {
   return (
     <section className="chart-settings-panel" aria-label="차트 표시 설정">
-      <div className="chart-settings-copy">
-        <strong>보기 설정</strong>
-        <p>{formatSettingsSummary(summary)}</p>
-      </div>
-      <div className="chart-settings-controls">
-        {children}
-      </div>
+      {children}
     </section>
   );
 }
@@ -441,36 +421,6 @@ function ChartViewport({
   );
 }
 
-function RangeOverview({
-  activeRange,
-  totalCount,
-  onZoomChange,
-}: {
-  activeRange: ChartZoomRange;
-  totalCount: number;
-  onZoomChange: (range: ChartZoomRange | null) => void;
-}) {
-  const startPercent = totalCount > 0 ? (activeRange.start / totalCount) * 100 : 0;
-  const widthPercent = totalCount > 0 ? ((activeRange.end - activeRange.start) / totalCount) * 100 : 100;
-  const canZoomOut = activeRange.start > 0 || activeRange.end < totalCount;
-
-  return (
-    <div className="chart-range-overview" aria-label="현재 표시 구간">
-      <div className="chart-range-track" aria-hidden="true">
-        <span style={{ left: `${startPercent}%`, width: `${widthPercent}%` }} />
-      </div>
-      <div className="chart-range-actions">
-        <button type="button" onClick={() => onZoomChange(zoomRangeByRatio(activeRange, totalCount, 0.72))}>
-          더 자세히
-        </button>
-        <button type="button" onClick={() => onZoomChange(canZoomOut ? zoomRangeByRatio(activeRange, totalCount, 1.4) : null)}>
-          넓게 보기
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function handleChartDragStart(
   event: MouseEvent<HTMLDivElement>,
   onChange: (selection: { startX: number; currentX: number } | null) => void,
@@ -525,16 +475,6 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function zoomRangeByRatio(range: ChartZoomRange, totalCount: number, ratio: number): ChartZoomRange | null {
-  if (totalCount <= 1) return null;
-  const currentSize = range.end - range.start;
-  const nextSize = clamp(Math.round(currentSize * ratio), 2, totalCount);
-  const center = range.start + currentSize / 2;
-  const nextStart = clamp(Math.round(center - nextSize / 2), 0, totalCount - nextSize);
-  const nextEnd = nextStart + nextSize;
-  return nextStart === 0 && nextEnd === totalCount ? null : { start: nextStart, end: nextEnd };
-}
-
 function toPoints(candidate: ChartCandidate, rows: DataRow[], useNumericX = false): Point[] {
   const xKey = candidate.xKey ?? candidate.categoryKey;
   const yKey = candidate.yKey ?? candidate.valueKey;
@@ -585,44 +525,6 @@ function shouldShowChartSettings(candidate: ChartCandidate, numericColumns: stri
 
 function shouldCompactProportionPoints(candidate: ChartCandidate): boolean {
   return candidate.id === 'pie' || candidate.id === 'donut';
-}
-
-function buildSettingsSummary(
-  candidate: ChartCandidate,
-  dimensionKey: string | null,
-  valueKey: string | null,
-  timeGroupingMode: TimeGroupingMode,
-  timeAggregationMethod: TimeAggregationMethod,
-): ChartSettingsSummary {
-  return {
-    basisLabel: dimensionKey ?? candidate.xKey ?? candidate.categoryKey ?? null,
-    valueLabel: valueKey ?? candidate.yKey ?? candidate.valueKey ?? null,
-    dateLabel: shouldAggregateTimeSeriesPoints(candidate) ? formatDateSetting(timeGroupingMode, timeAggregationMethod) : null,
-  };
-}
-
-function formatSettingsSummary(summary: ChartSettingsSummary): string {
-  const parts = [
-    summary.basisLabel ? `기준 ${summary.basisLabel}` : null,
-    summary.valueLabel ? `값 ${summary.valueLabel}` : null,
-    summary.dateLabel,
-  ].filter((part): part is string => part !== null);
-
-  return parts.length > 0 ? parts.join(' · ') : '현재 데이터 기준으로 표시합니다.';
-}
-
-function formatDateSetting(mode: TimeGroupingMode, method: TimeAggregationMethod): string {
-  if (mode === 'raw') return '원본 순서';
-  const modeLabel: Record<Exclude<TimeGroupingMode, 'raw'>, string> = {
-    day: '일별',
-    month: '월별',
-    year: '연도별',
-  };
-  const methodLabel: Record<TimeAggregationMethod, string> = {
-    sum: '합계',
-    average: '평균',
-  };
-  return `${modeLabel[mode]} ${methodLabel[method]}`;
 }
 
 function aggregatePointsByLabel(points: Point[]): Point[] {
