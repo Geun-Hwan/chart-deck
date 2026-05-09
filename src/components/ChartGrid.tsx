@@ -12,8 +12,8 @@ export function ChartGrid({ candidates, rows, selectedId, onSelect }: Props) {
   if (candidates.length === 0) {
     return (
       <section className="empty-compass" aria-labelledby="empty-compass-title">
-        <h2 id="empty-compass-title">데이터를 넣으면 차트를 바로 볼 수 있습니다</h2>
-        <p>샘플, CSV 파일, 텍스트 붙여넣기 중 하나로 시작하세요.</p>
+        <h2 id="empty-compass-title">CSV를 넣으면 차트가 바로 열립니다</h2>
+        <p>왼쪽에서 샘플을 고르거나 CSV 파일을 불러오세요.</p>
       </section>
     );
   }

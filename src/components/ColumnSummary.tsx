@@ -3,7 +3,7 @@ import type { ColumnProfile } from '../lib/dataTypes';
 const typeLabels: Record<ColumnProfile['type'], string> = {
   number: '숫자',
   category: '범주',
-  date: '날짜 후보',
+  date: '날짜',
   unknown: '확인 필요',
 };
 
@@ -15,8 +15,8 @@ export function ColumnSummary({ profiles }: Props) {
   if (profiles.length === 0) {
     return (
       <section className="panel empty-panel">
-        <h2>데이터 이해</h2>
-        <p>파싱된 데이터가 있으면 컬럼 해석 결과가 표시됩니다.</p>
+        <h2>컬럼 해석</h2>
+        <p>데이터를 입력하면 컬럼 타입이 표시됩니다.</p>
       </section>
     );
   }
@@ -25,8 +25,8 @@ export function ColumnSummary({ profiles }: Props) {
     <section className="panel quiet-panel">
       <div className="section-heading compact-heading">
         <div>
-          <p className="eyebrow">데이터 해석</p>
-          <h2>데이터 이해</h2>
+          <p className="eyebrow">컬럼</p>
+          <h2>컬럼 해석</h2>
         </div>
         <span className="soft-badge">{profiles.length}개 컬럼</span>
       </div>

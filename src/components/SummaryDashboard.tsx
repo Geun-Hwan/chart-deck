@@ -14,14 +14,14 @@ type Props = {
 export function SummaryDashboard({ summary }: Props) {
   const visibleTypeCounts = Object.entries(summary.typeCounts).filter(([, count]) => count > 0);
   const helperText = summary.readyChartCount > 0
-    ? '행과 컬럼 수, 감지된 타입만 간단히 보여줍니다.'
+    ? '필요한 정보만 요약합니다.'
     : '컬럼 타입을 확인한 뒤 차트 후보를 다시 볼 수 있습니다.';
 
   return (
-    <section className="data-orbit" aria-label="데이터 정보">
+    <section className="data-orbit" aria-label="데이터 요약">
       <div className="orbit-heading">
         <div>
-          <p className="eyebrow">데이터 정보</p>
+          <p className="eyebrow">데이터 요약</p>
           <strong>{summary.rowCount.toLocaleString('ko-KR')}행 · {summary.columnCount.toLocaleString('ko-KR')}컬럼</strong>
           <p>{helperText}</p>
         </div>

@@ -2,9 +2,9 @@
 
 브라우저에서 CSV를 바로 읽고, 데이터에 맞는 차트 후보를 비교할 수 있는 **로컬 우선 데이터 시각화 워크벤치**입니다.
 
-서버 업로드 없이 데이터를 확인하고, 차트 종류·기준 컬럼·값 컬럼·날짜 집계 방식을 바꿔 보면서 데이터에 맞는 관점을 빠르게 찾는 데 초점을 맞췄습니다.
+서버 업로드 없이 데이터를 확인하고, 차트 종류, 기준 컬럼, 값 컬럼, 날짜 집계 방식을 바꿔 보면서 데이터에 맞는 관점을 빠르게 찾는 데 초점을 맞췄습니다.
 
-## 데모 성격
+## 프로젝트 개요
 
 - **입력**: 샘플 데이터, 로컬 CSV 파일, 텍스트 붙여넣기
 - **분석**: 컬럼 타입 추론, 행/컬럼 정보 요약
@@ -103,11 +103,11 @@ npm run e2e
 
 ## 스냅샷
 
-최신 UI 스냅샷은 아래 파일 기준입니다.
+최신 UI 스냅샷은 `npm run snapshots`로 갱신합니다.
 
-- `docs/ui-snapshots/20260508-1853-studio-empty-workspace.png`
-- `docs/ui-snapshots/20260508-1853-studio-sample-workspace.png`
-- `docs/ui-snapshots/20260508-1853-studio-large-sampled-workspace.png`
+- `docs/ui-snapshots/20260510-0042-studio-empty-workspace.png`
+- `docs/ui-snapshots/20260510-0042-studio-sample-workspace.png`
+- `docs/ui-snapshots/20260510-0042-studio-large-sampled-workspace.png`
 
 ## 프로젝트 의도
 

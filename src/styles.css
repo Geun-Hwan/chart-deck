@@ -19,7 +19,7 @@
   --accent-2: #7bc7ff;
   --accent-3: #f7a86c;
   --accent-4: #f5d58e;
-  --shadow: 0 30px 90px rgba(0, 0, 0, 0.38);
+  --shadow: 0 18px 52px rgba(0, 0, 0, 0.24);
   --shell-background:
     radial-gradient(circle at 18% 16%, rgba(214, 255, 92, 0.08), transparent 24%),
     radial-gradient(circle at 82% 8%, rgba(123, 199, 255, 0.08), transparent 22%),
@@ -50,7 +50,7 @@ html[data-theme='light'] {
   --accent-2: #2563eb;
   --accent-3: #cc6b28;
   --accent-4: #9d7b17;
-  --shadow: 0 24px 80px rgba(65, 84, 120, 0.12);
+  --shadow: 0 16px 44px rgba(65, 84, 120, 0.1);
   --shell-background:
     radial-gradient(circle at 18% 16%, rgba(195, 229, 122, 0.2), transparent 24%),
     radial-gradient(circle at 82% 8%, rgba(123, 199, 255, 0.16), transparent 22%),
@@ -92,6 +92,7 @@ body::before {
     linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: linear-gradient(180deg, rgba(255, 255, 255, 0.58), transparent 84%);
+  opacity: 0.32;
 }
 
 button,
@@ -152,7 +153,8 @@ input[type='file']::file-selector-button {
   z-index: 0;
   min-height: 100vh;
   display: grid;
-  gap: clamp(14px, 1.4vw, 20px);
+  align-content: start;
+  gap: clamp(12px, 1.2vw, 18px);
   padding: clamp(12px, 1.4vw, 20px);
   isolation: isolate;
 }
@@ -162,12 +164,10 @@ input[type='file']::file-selector-button {
   position: absolute;
   inset: 12px;
   z-index: -1;
-  border-radius: 34px;
-  background: var(--shell-background);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 40px 120px rgba(0, 0, 0, 0.24);
+  border-radius: 28px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 .workspace-status,
@@ -178,10 +178,10 @@ input[type='file']::file-selector-button {
 .empty-compass,
 .alert {
   border: 1px solid var(--line);
-  border-radius: 28px;
+  border-radius: 22px;
   background: var(--panel-background);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(12px);
 }
 
 .eyebrow {
@@ -194,7 +194,6 @@ input[type='file']::file-selector-button {
 
 .mission-panel__source span,
 .orbit-metric span,
-.featured-chart-label,
 .chart-tab small,
 .soft-badge {
   text-transform: uppercase;
@@ -220,7 +219,7 @@ input[type='file']::file-selector-button {
 .primary-workspace {
   display: grid;
   grid-template-columns: minmax(340px, 0.78fr) minmax(0, 1.5fr);
-  gap: clamp(14px, 1.4vw, 20px);
+  gap: clamp(12px, 1.2vw, 18px);
   align-items: start;
 }
 
@@ -245,7 +244,7 @@ input[type='file']::file-selector-button {
   gap: 12px;
   align-items: center;
   padding: 12px 14px;
-  border-radius: 22px;
+  border-radius: 18px;
   background: linear-gradient(135deg, rgba(11, 14, 22, 0.94), rgba(15, 19, 28, 0.84));
 }
 
@@ -296,24 +295,14 @@ input[type='file']::file-selector-button {
 .workspace-signals span {
   display: inline-flex;
   align-items: center;
-  border: 1px solid rgba(214, 255, 92, 0.2);
+  border: 1px solid var(--line);
   border-radius: 999px;
   padding: 6px 9px;
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--ink);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--muted);
   font-size: 0.72rem;
   font-weight: 800;
   white-space: nowrap;
-}
-
-.operation-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.68fr);
-  grid-template-areas:
-    'stage telemetry'
-    'stage forensics';
-  gap: 16px;
-  align-items: stretch;
 }
 
 .support-grid {
@@ -322,26 +311,12 @@ input[type='file']::file-selector-button {
   align-items: start;
 }
 
-.operation-grid > .visual-stage {
-  grid-area: stage;
-}
-
-.operation-grid > .telemetry-stack {
-  grid-area: telemetry;
-}
-
-.operation-grid > .forensics-stack {
-  grid-area: forensics;
-}
-
 .visual-stage {
   min-width: 0;
   display: grid;
   align-content: start;
 }
 
-.telemetry-stack,
-.forensics-stack,
 .detail-grid {
   display: grid;
   gap: 16px;
@@ -357,7 +332,7 @@ input[type='file']::file-selector-button {
   grid-template-columns: minmax(220px, 0.7fr) minmax(320px, 1.2fr) minmax(220px, 0.78fr);
   gap: 14px;
   align-items: stretch;
-  padding: 15px;
+  padding: 14px;
   background: linear-gradient(135deg, rgba(11, 14, 22, 0.96), rgba(15, 19, 28, 0.88));
 }
 
@@ -390,9 +365,9 @@ input[type='file']::file-selector-button {
   gap: 14px;
   align-items: flex-start;
   padding: 12px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(214, 255, 92, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line);
 }
 
 .input-heading > span,
@@ -407,7 +382,6 @@ input[type='file']::file-selector-button {
 .input-heading > span {
   width: 40px;
   height: 40px;
-  flex: 0 0 auto;
   background: linear-gradient(135deg, var(--accent), #f5ffb4);
   color: #09111e;
   box-shadow: 0 12px 24px rgba(214, 255, 92, 0.16);
@@ -415,7 +389,7 @@ input[type='file']::file-selector-button {
 
 .input-heading h2 {
   margin: 0;
-  font-size: 1.18rem;
+  font-size: 1.12rem;
   letter-spacing: -0.05em;
 }
 
@@ -451,8 +425,8 @@ input[type='file']::file-selector-button {
 
 .input-section-heading span {
   border-radius: 999px;
-  padding: 5px 9px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.025);
   color: var(--muted);
   font-size: 0.76rem;
   font-weight: 800;
@@ -486,10 +460,8 @@ input[type='file']::file-selector-button {
   gap: 6px;
   min-height: 92px;
   padding: 14px;
-  border-radius: 22px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.03)),
-    rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
   color: var(--ink);
   text-align: left;
 }
@@ -506,19 +478,11 @@ input[type='file']::file-selector-button {
 
 .sample-card:hover {
   border-color: rgba(214, 255, 92, 0.34);
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.24);
-}
-
-.sample-card span {
-  color: var(--accent);
-  font-size: 0.76rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
 }
 
 .sample-card strong {
-  font-size: 1.03rem;
+  font-size: 1rem;
   letter-spacing: -0.03em;
   word-break: keep-all;
 }
@@ -546,8 +510,8 @@ input[type='file']::file-selector-button {
   display: grid;
   gap: 8px;
   padding: 16px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.025));
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
   color: var(--ink);
   text-align: left;
 }
@@ -570,8 +534,8 @@ input[type='file']::file-selector-button {
   justify-content: center;
   min-height: 100%;
   padding: 16px 18px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
   color: var(--ink);
   font-weight: 800;
 }
@@ -586,7 +550,7 @@ input[type='file']::file-selector-button {
 .dialog-close:hover,
 .paste-apply:hover {
   border-color: rgba(123, 199, 255, 0.4);
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
 }
 
 .clear-button:disabled {
@@ -681,7 +645,6 @@ textarea::placeholder {
 }
 
 .dialog-close {
-  flex: 0 0 auto;
   min-height: auto;
   padding: 10px 14px;
   border-radius: 999px;
@@ -696,8 +659,8 @@ textarea::placeholder {
 
 .data-orbit {
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: 12px;
+  padding: 16px;
   background: var(--panel-background);
 }
 
@@ -706,10 +669,10 @@ textarea::placeholder {
   justify-content: space-between;
   gap: 16px;
   align-items: start;
-  padding: 18px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(214, 255, 92, 0.12);
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line);
 }
 
 .orbit-heading strong {
@@ -733,9 +696,9 @@ textarea::placeholder {
 
 .orbit-metric,
 .orbit-types {
-  padding: 18px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -765,8 +728,8 @@ textarea::placeholder {
   align-items: center;
   border-radius: 999px;
   padding: 8px 11px;
-  background: rgba(214, 255, 92, 0.12);
-  color: var(--accent);
+  background: rgba(123, 199, 255, 0.08);
+  color: var(--accent-2);
   font-size: 0.78rem;
   font-weight: 800;
 }
@@ -805,8 +768,8 @@ textarea::placeholder {
 .chart-compass,
 .quiet-panel {
   background: var(--panel-background);
-  border-radius: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  border: 1px solid var(--line);
   box-shadow: var(--shadow);
 }
 
@@ -837,17 +800,7 @@ textarea::placeholder {
 .chart-compass {
   position: relative;
   overflow: hidden;
-  padding: clamp(18px, 1.8vw, 26px);
-}
-
-.chart-compass::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at top right, rgba(123, 199, 255, 0.12), transparent 34%),
-    radial-gradient(circle at bottom left, rgba(214, 255, 92, 0.1), transparent 30%);
-  pointer-events: none;
+  padding: clamp(14px, 1.5vw, 22px);
 }
 
 .compass-main {
@@ -862,22 +815,20 @@ textarea::placeholder {
 .chart-card {
   display: grid;
   gap: 10px;
-  min-height: 280px;
-  padding: 18px;
-  border-radius: 26px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.025)),
-    rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 260px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line);
 }
 
 .chart-card.featured {
-  min-height: clamp(400px, 44vw, 620px);
+  min-height: clamp(380px, 40vw, 560px);
 }
 
 .chart-card h3 {
-  margin: 8px 0 0;
-  font-size: 1.42rem;
+  margin: 4px 0 0;
+  font-size: 1.28rem;
   letter-spacing: -0.04em;
 }
 
@@ -904,18 +855,26 @@ textarea::placeholder {
   position: relative;
   z-index: 1;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.chart-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .chart-tab {
   display: inline-flex;
   align-items: center;
+  flex: 0 0 auto;
   gap: 7px;
   min-height: 40px;
   padding: 9px 13px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--muted);
   font-weight: 850;
 }
@@ -926,8 +885,8 @@ textarea::placeholder {
 }
 
 .chart-tab.is-selected {
-  border-color: rgba(214, 255, 92, 0.48);
-  background: rgba(214, 255, 92, 0.12);
+  border-color: rgba(123, 199, 255, 0.44);
+  background: rgba(123, 199, 255, 0.12);
   color: var(--ink);
 }
 
@@ -971,7 +930,7 @@ textarea::placeholder {
 }
 
 .quiet-panel {
-  padding: 20px;
+  padding: 18px;
 }
 
 .section-heading {
@@ -993,11 +952,10 @@ textarea::placeholder {
 .soft-badge {
   display: inline-flex;
   align-items: center;
-  flex: 0 0 auto;
   white-space: nowrap;
   border-radius: 999px;
   padding: 7px 10px;
-  background: rgba(123, 199, 255, 0.12);
+  background: rgba(123, 199, 255, 0.08);
   color: var(--accent-2);
   font-size: 0.78rem;
   font-weight: 900;
@@ -1014,7 +972,7 @@ textarea::placeholder {
   gap: 12px;
   align-items: start;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
+  border-radius: 14px;
   padding: 12px;
   background: rgba(255, 255, 255, 0.03);
 }
@@ -1110,10 +1068,10 @@ th {
   align-items: center;
   width: fit-content;
   max-width: 100%;
-  padding: 6px;
-  border: 1px solid rgba(123, 199, 255, 0.12);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.025);
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .chart-option-panel {
@@ -1155,10 +1113,10 @@ th {
   margin: 0;
   width: fit-content;
   max-width: 100%;
-  padding: 7px 11px;
-  border: 1px solid rgba(123, 199, 255, 0.2);
-  border-radius: 999px;
-  background: rgba(123, 199, 255, 0.08);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 800;
@@ -1167,7 +1125,7 @@ th {
 .recharts-frame {
   min-height: 360px;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 14px;
 }
 
 .recharts-frame .recharts-wrapper {
@@ -1267,20 +1225,12 @@ html[data-theme='light'] .chart-tab.is-selected {
 }
 
 @media (max-width: 1180px) {
-  .operation-grid,
   .primary-workspace,
   .support-grid,
   .detail-grid,
   .compass-main,
   .input-studio {
     grid-template-columns: 1fr;
-  }
-
-  .operation-grid {
-    grid-template-areas:
-      'stage'
-      'telemetry'
-      'forensics';
   }
 }
 
