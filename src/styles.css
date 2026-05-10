@@ -1056,9 +1056,19 @@ th {
   color: var(--ink);
 }
 
-.chart-render-frame {
+.chart-render-frame,
+.chart-loading {
   display: grid;
   gap: 8px;
+}
+
+.chart-loading {
+  min-height: 360px;
+  place-items: center;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  color: var(--muted);
+  font-weight: 800;
 }
 
 .chart-settings-panel {

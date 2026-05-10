@@ -1,5 +1,7 @@
+import { lazy, Suspense } from 'react';
 import type { ChartCandidate, DataRow } from '../lib/dataTypes';
-import { CandidateChart } from './charts/CandidateChart';
+
+const CandidateChart = lazy(() => import('./charts/CandidateChart').then((module) => ({ default: module.CandidateChart })));
 
 const statusLabels: Record<ChartCandidate['status'], string> = {
   ready: '사용 가능',
@@ -24,7 +26,9 @@ export function ChartCard({ candidate, rows, featured = false }: Props) {
         </div>
       </header>
       <p className="chart-reason">{candidate.reason}</p>
-      <CandidateChart candidate={candidate} rows={rows} />
+      <Suspense fallback={<div className="chart-loading" role="status">차트를 준비하고 있습니다.</div>}>
+        <CandidateChart candidate={candidate} rows={rows} />
+      </Suspense>
     </article>
   );
 }
