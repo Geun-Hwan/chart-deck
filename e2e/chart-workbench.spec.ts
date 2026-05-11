@@ -113,6 +113,27 @@ test('CSV 파일 선택과 데이터 비우기가 실제로 동작한다', async
   await expect(page.getByRole('heading', { name: 'CSV를 넣으면 차트가 바로 열립니다' })).toBeVisible();
 });
 
+test('CSV 파일을 드래그앤드롭으로 바로 불러올 수 있다', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByTestId('csv-drop-zone').dispatchEvent('dragover', {
+    dataTransfer: await page.evaluateHandle(() => new DataTransfer()),
+  });
+  await expect(page.getByTestId('csv-drop-zone')).toHaveClass(/is-dragging/);
+
+  const dataTransfer = await page.evaluateHandle(() => {
+    const transfer = new DataTransfer();
+    const file = new File(['day,value\n2026-01-01,10\n2026-01-02,20'], 'drop-sales.csv', { type: 'text/csv' });
+    transfer.items.add(file);
+    return transfer;
+  });
+  await page.getByTestId('csv-drop-zone').dispatchEvent('drop', { dataTransfer });
+
+  await expect(page.locator('.mission-panel__source strong')).toHaveText('내 CSV · drop-sales.csv');
+  await expect(page.getByRole('heading', { name: '선 차트' }).first()).toBeVisible();
+  await expect(page.getByRole('img', { name: '선 차트 시각화, 2개 지점' }).first()).toBeVisible();
+});
+
 test('CSV 텍스트 붙여넣기 흐름도 로컬 입력으로 선 차트를 보여준다', async ({ page }) => {
   await page.goto('/');
 

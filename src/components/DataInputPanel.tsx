@@ -1,4 +1,4 @@
-import type { ChangeEvent, KeyboardEvent } from 'react';
+import type { ChangeEvent, DragEvent, KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { SampleDataset } from '../data/sampleData';
 import { sampleDatasets } from '../data/sampleData';
@@ -15,6 +15,7 @@ type Props = {
 
 export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileText, onError, onClear }: Props) {
   const [isPasteOpen, setIsPasteOpen] = useState(false);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const pasteToggleRef = useRef<HTMLButtonElement>(null);
   const pasteTextareaRef = useRef<HTMLTextAreaElement>(null);
   const pasteCloseRef = useRef<HTMLButtonElement>(null);
@@ -33,12 +34,36 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    await loadFile(file);
+    event.target.value = '';
+  }
+
+  async function loadFile(file: File) {
     const result = await readTextFile(file);
     if (!result.ok) {
       onError(result.error);
       return;
     }
     onFileText(result.text, file.name);
+  }
+
+  function handleFileDragOver(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    setIsDraggingFile(true);
+  }
+
+  function handleFileDragLeave(event: DragEvent<HTMLLabelElement>) {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+    setIsDraggingFile(false);
+  }
+
+  async function handleFileDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setIsDraggingFile(false);
+    const file = event.dataTransfer.files.item(0);
+    if (!file) return;
+    await loadFile(file);
   }
 
   function closePasteDialog() {
@@ -111,9 +136,15 @@ export function DataInputPanel({ inputText, onTextChange, onLoadSample, onFileTe
           <span>로컬 처리</span>
         </div>
         <div className="input-actions" role="toolbar" aria-label="데이터 입력 바로가기">
-          <label className="file-action">
+          <label
+            className={`file-action ${isDraggingFile ? 'is-dragging' : ''}`}
+            data-testid="csv-drop-zone"
+            onDragOver={handleFileDragOver}
+            onDragLeave={handleFileDragLeave}
+            onDrop={handleFileDrop}
+          >
             <span>CSV 파일 선택</span>
-            <small>서버 업로드 없이 브라우저에서 처리합니다.</small>
+            <small>클릭하거나 파일을 끌어놓으세요. 서버 업로드 없이 처리합니다.</small>
             <input type="file" accept=".csv,text/csv,text/plain" onChange={handleFileChange} />
           </label>
 

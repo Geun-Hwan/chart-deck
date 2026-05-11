@@ -454,6 +454,13 @@ input[type='file']::file-selector-button {
     background 0.18s ease;
 }
 
+.file-action.is-dragging {
+  transform: translateY(-2px);
+  border-color: rgba(214, 255, 92, 0.42);
+  background: rgba(214, 255, 92, 0.08);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
 .sample-card {
   display: grid;
   align-content: start;
@@ -1232,6 +1239,10 @@ html[data-theme='light'] .chart-select-field select {
 
 html[data-theme='light'] .chart-tab.is-selected {
   background: linear-gradient(135deg, rgba(108, 152, 0, 0.12), rgba(37, 99, 235, 0.08));
+}
+
+html[data-theme='light'] .file-action.is-dragging {
+  background: rgba(108, 152, 0, 0.1);
 }
 
 @media (max-width: 1180px) {

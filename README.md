@@ -15,7 +15,7 @@
 ## 핵심 기능
 
 ### 1. 로컬 우선 데이터 입력
-- CSV 파일 선택
+- CSV 파일 선택 / 드래그앤드롭
 - CSV 텍스트 붙여넣기
 - 샘플 데이터 즉시 로드
 - 브라우저 내부 처리, 서버 업로드 없음
@@ -105,9 +105,9 @@ npm run e2e
 
 최신 UI 스냅샷은 `npm run snapshots`로 갱신합니다.
 
-- `docs/ui-snapshots/20260510-0042-studio-empty-workspace.png`
-- `docs/ui-snapshots/20260510-0042-studio-sample-workspace.png`
-- `docs/ui-snapshots/20260510-0042-studio-large-sampled-workspace.png`
+- `docs/ui-snapshots/20260511-1701-studio-empty-workspace.png`
+- `docs/ui-snapshots/20260511-1701-studio-sample-workspace.png`
+- `docs/ui-snapshots/20260511-1701-studio-large-sampled-workspace.png`
 
 ## 프로젝트 의도
 
