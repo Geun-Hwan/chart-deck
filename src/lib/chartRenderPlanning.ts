@@ -4,10 +4,13 @@ export type ChartPointLike = {
   value: number;
 };
 
+export type ChartRenderStrategy = 'representative' | 'grouped';
+
 export type ChartRenderNotice = {
   originalCount: number;
   renderedCount: number;
   reason: string;
+  strategy: ChartRenderStrategy;
 };
 
 export type ChartRenderPlan<T extends ChartPointLike> = {
@@ -50,7 +53,7 @@ export function planChartRendering<T extends ChartPointLike>(kind: RenderChartKi
 
 function preserveExtremes<T extends ChartPointLike>(points: T[], maxPoints: number, reason: string): ChartRenderPlan<T> {
   if (points.length <= maxPoints) return { points, notice: null };
-  if (maxPoints < 4) return { points: points.slice(0, maxPoints), notice: toNotice(points.length, maxPoints, reason) };
+  if (maxPoints < 4) return { points: points.slice(0, maxPoints), notice: toNotice(points.length, maxPoints, reason, 'representative') };
 
   const first = points[0]!;
   const last = points.at(-1)!;
@@ -84,7 +87,7 @@ function preserveExtremes<T extends ChartPointLike>(points: T[], maxPoints: numb
 
   return {
     points: reduced.slice(0, maxPoints),
-    notice: toNotice(points.length, Math.min(reduced.length, maxPoints), reason),
+    notice: toNotice(points.length, Math.min(reduced.length, maxPoints), reason, 'representative'),
   };
 }
 
@@ -100,10 +103,15 @@ function compactByValue<T extends ChartPointLike>(points: T[], limit: number, re
 
   return {
     points: compacted,
-    notice: toNotice(points.length, compacted.length, reason),
+    notice: toNotice(points.length, compacted.length, reason, 'grouped'),
   };
 }
 
-function toNotice(originalCount: number, renderedCount: number, reason: string): ChartRenderNotice {
-  return { originalCount, renderedCount, reason };
+function toNotice(
+  originalCount: number,
+  renderedCount: number,
+  reason: string,
+  strategy: ChartRenderStrategy,
+): ChartRenderNotice {
+  return { originalCount, renderedCount, reason, strategy };
 }

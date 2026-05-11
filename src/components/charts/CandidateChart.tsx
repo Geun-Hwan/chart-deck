@@ -25,7 +25,7 @@ import {
   YAxis,
 } from 'recharts';
 import { aggregateTimeSeriesPoints } from '../../lib/chartTimeGrouping';
-import { planChartRendering } from '../../lib/chartRenderPlanning';
+import { planChartRendering, type ChartRenderNotice } from '../../lib/chartRenderPlanning';
 import type { ChartCandidate, DataRow, DataValue, TimeAggregationMethod, TimeGroupingMode } from '../../lib/dataTypes';
 import { WarningPlaceholder } from '../WarningPlaceholder';
 
@@ -175,12 +175,28 @@ function renderChart({
       ) : null}
       {renderPlan.notice ? (
         <p className="render-notice" data-testid="render-notice">
-          {renderPlan.notice.originalCount.toLocaleString('ko-KR')}개 중 {renderPlan.notice.renderedCount.toLocaleString('ko-KR')}개를 렌더링합니다. {renderPlan.notice.reason}
+          {formatRenderNotice(renderPlan.notice)}
         </p>
       ) : null}
-      <ChartSurface candidate={candidate} points={renderPlan.points} />
+      <ChartSurface candidate={candidate} points={renderPlan.points} notice={renderPlan.notice} />
     </div>
   );
+}
+
+function formatRenderNotice(notice: ChartRenderNotice): string {
+  const originalCount = notice.originalCount.toLocaleString('ko-KR');
+  const renderedCount = notice.renderedCount.toLocaleString('ko-KR');
+  if (notice.strategy === 'grouped') {
+    return `전체 ${originalCount}개 항목을 기준으로 계산했고, 화면에는 ${renderedCount}개 묶음으로 표시합니다. 나머지는 기타에 합산됩니다.`;
+  }
+  return `전체 ${originalCount}개 데이터를 기준으로 계산했고, 화면에는 ${renderedCount}개 대표 지점만 표시합니다. ${notice.reason}`;
+}
+
+function formatChartLabel(title: string, notice: ChartRenderNotice): string {
+  const originalCount = notice.originalCount.toLocaleString('ko-KR');
+  const renderedCount = notice.renderedCount.toLocaleString('ko-KR');
+  const unit = notice.strategy === 'grouped' ? '묶음' : '대표 지점';
+  return `${title} 시각화, 전체 ${originalCount}개 중 ${renderedCount}개 ${unit}`;
 }
 
 function ChartSettingsPanel({ children }: { children: React.ReactNode }) {
@@ -295,8 +311,8 @@ function TimeGroupingToolbar({
   );
 }
 
-function ChartSurface({ candidate, points }: { candidate: ChartCandidate; points: Point[] }) {
-  const label = `${candidate.title} 시각화, ${points.length}개 지점`;
+function ChartSurface({ candidate, points, notice }: { candidate: ChartCandidate; points: Point[]; notice: ChartRenderNotice | null }) {
+  const label = notice ? formatChartLabel(candidate.title, notice) : `${candidate.title} 시각화, ${points.length}개 지점`;
   const showBrush = shouldShowBrush(candidate, points);
 
   return (

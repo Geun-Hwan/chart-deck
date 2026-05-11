@@ -14,7 +14,7 @@ describe('planChartRendering', () => {
     const result = planChartRendering('line', points(30_000));
     expect(result.points.length).toBeLessThanOrEqual(900);
     expect(result.points[0]?.x).toBe(0);
-    expect(result.notice).toMatchObject({ originalCount: 30000 });
+    expect(result.notice).toMatchObject({ originalCount: 30000, strategy: 'representative' });
   });
 
   it('도넛 차트는 주요 항목과 기타로 정리한다', () => {
@@ -26,6 +26,6 @@ describe('planChartRendering', () => {
   it('가로 막대 차트는 상위 항목 중심으로 정리한다', () => {
     const result = planChartRendering('horizontalBar', points(100));
     expect(result.points).toHaveLength(20);
-    expect(result.notice?.renderedCount).toBe(20);
+    expect(result.notice).toMatchObject({ renderedCount: 20, strategy: 'grouped' });
   });
 });

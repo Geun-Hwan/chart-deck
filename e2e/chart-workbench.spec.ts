@@ -236,8 +236,8 @@ test('3만 행 시계열은 성능 보호 렌더링을 적용한다', async ({ p
     buffer: Buffer.from(lines.join('\n')),
   });
 
-  await expect(page.getByTestId('render-notice')).toContainText('30,000개 중');
-  await expect(page.getByRole('img', { name: /선 차트 시각화, 900개 지점/ }).first()).toBeVisible();
+  await expect(page.getByTestId('render-notice')).toContainText('전체 30,000개 데이터를 기준으로 계산했고');
+  await expect(page.getByRole('img', { name: /선 차트 시각화, 전체 30,000개 중 900개 대표 지점/ }).first()).toBeVisible();
   await expect(page.locator('.recharts-brush')).toBeVisible();
 });
 
