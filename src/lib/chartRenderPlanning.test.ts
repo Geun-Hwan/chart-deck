@@ -23,9 +23,9 @@ describe('planChartRendering', () => {
     expect(result.points.at(-1)?.label).toBe('기타');
   });
 
-  it('가로 막대 차트는 상위 항목 중심으로 정리한다', () => {
+  it('막대 계열은 상위 항목으로 합치지 않고 호출자가 구간을 고르게 둔다', () => {
     const result = planChartRendering('horizontalBar', points(100));
-    expect(result.points).toHaveLength(20);
-    expect(result.notice).toMatchObject({ renderedCount: 20, strategy: 'grouped' });
+    expect(result.points).toHaveLength(100);
+    expect(result.notice).toBeNull();
   });
 });

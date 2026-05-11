@@ -19,10 +19,8 @@ export type ChartRenderPlan<T extends ChartPointLike> = {
 };
 
 const SERIES_RENDER_LIMIT = 900;
-const BAR_RENDER_LIMIT = 600;
 const SCATTER_RENDER_LIMIT = 900;
 const RADAR_RENDER_LIMIT = 12;
-const HORIZONTAL_BAR_LIMIT = 20;
 const PROPORTION_LIMIT = 6;
 
 export type RenderChartKind = 'line' | 'area' | 'bar' | 'horizontalBar' | 'scatter' | 'pie' | 'donut' | 'radar';
@@ -36,8 +34,8 @@ export function planChartRendering<T extends ChartPointLike>(kind: RenderChartKi
     return compactByValue(points, RADAR_RENDER_LIMIT, '레이더 차트는 비교 가능한 상위 항목만 표시합니다.');
   }
 
-  if (kind === 'horizontalBar') {
-    return compactByValue(points, HORIZONTAL_BAR_LIMIT, '가로 막대 차트는 상위 항목 중심으로 표시합니다.');
+  if (kind === 'bar' || kind === 'horizontalBar') {
+    return { points, notice: null };
   }
 
   if (kind === 'line' || kind === 'area') {
@@ -48,7 +46,7 @@ export function planChartRendering<T extends ChartPointLike>(kind: RenderChartKi
     return preserveExtremes(points, SCATTER_RENDER_LIMIT, '대량 산점도는 분포를 볼 수 있도록 대표 지점으로 표시합니다.');
   }
 
-  return preserveExtremes(points, BAR_RENDER_LIMIT, '대량 막대 차트는 흐름을 볼 수 있도록 대표 지점으로 표시합니다.');
+  return { points, notice: null };
 }
 
 function preserveExtremes<T extends ChartPointLike>(points: T[], maxPoints: number, reason: string): ChartRenderPlan<T> {

@@ -40,13 +40,22 @@ type Point = {
   value: number;
 };
 
+type ChartWindowState = {
+  startIndex: number;
+  endIndex: number;
+  totalCount: number;
+  pageSize: number;
+};
+
 const palette = ['#b6f24a', '#60a5fa', '#fb7185', '#fbbf24', '#a78bfa', '#34d399'];
+const BAR_WINDOW_SIZE = 20;
 
 export function CandidateChart({ candidate, rows }: Props) {
   const [timeGroupingMode, setTimeGroupingMode] = useState<TimeGroupingMode>('raw');
   const [timeAggregationMethod, setTimeAggregationMethod] = useState<TimeAggregationMethod>('sum');
   const [selectedValueKey, setSelectedValueKey] = useState<string | null>(candidate.yKey ?? candidate.valueKey ?? null);
   const [selectedDimensionKey, setSelectedDimensionKey] = useState<string | null>(candidate.xKey ?? candidate.categoryKey ?? null);
+  const [barWindowStart, setBarWindowStart] = useState(0);
   const numericColumns = useMemo(() => findNumericColumns(rows), [rows]);
   const dimensionColumns = useMemo(() => findDimensionColumns(rows, numericColumns), [numericColumns, rows]);
   const dateColumns = useMemo(() => findDateColumns(rows), [rows]);
@@ -64,7 +73,12 @@ export function CandidateChart({ candidate, rows }: Props) {
     setTimeAggregationMethod('sum');
     setSelectedValueKey(candidate.yKey ?? candidate.valueKey ?? null);
     setSelectedDimensionKey(candidate.xKey ?? candidate.categoryKey ?? null);
+    setBarWindowStart(0);
   }, [candidate.categoryKey, candidate.id, candidate.valueKey, candidate.xKey, candidate.yKey]);
+
+  useEffect(() => {
+    setBarWindowStart(0);
+  }, [effectiveCandidate.categoryKey, effectiveCandidate.valueKey, effectiveCandidate.xKey, effectiveCandidate.yKey, points.length]);
 
   if (candidate.status === 'placeholder' || candidate.status === 'error') {
     return <WarningPlaceholder status={candidate.status} reason={candidate.reason} />;
@@ -83,6 +97,8 @@ export function CandidateChart({ candidate, rows }: Props) {
     onTimeGroupingModeChange: setTimeGroupingMode,
     timeAggregationMethod,
     onTimeAggregationMethodChange: setTimeAggregationMethod,
+    barWindowStart,
+    onBarWindowStartChange: setBarWindowStart,
   });
 
   if (candidate.status === 'warning') {
@@ -123,6 +139,8 @@ type RenderChartArgs = {
   onTimeGroupingModeChange: (mode: TimeGroupingMode) => void;
   timeAggregationMethod: TimeAggregationMethod;
   onTimeAggregationMethodChange: (method: TimeAggregationMethod) => void;
+  barWindowStart: number;
+  onBarWindowStartChange: (start: number) => void;
 };
 
 function renderChart({
@@ -138,8 +156,12 @@ function renderChart({
   onTimeGroupingModeChange,
   timeAggregationMethod,
   onTimeAggregationMethodChange,
+  barWindowStart,
+  onBarWindowStartChange,
 }: RenderChartArgs) {
-  const renderPlan = planChartRendering(candidate.id, points);
+  const windowState = getBarWindowState(candidate, points, barWindowStart);
+  const pointsForPlan = windowState ? points.slice(windowState.startIndex, windowState.endIndex) : points;
+  const renderPlan = windowState ? { points: pointsForPlan, notice: null } : planChartRendering(candidate.id, pointsForPlan);
 
   if (renderPlan.points.length === 0) {
     return <WarningPlaceholder status="warning" reason="표시할 수 있는 숫자 값이 부족합니다." />;
@@ -163,6 +185,24 @@ function renderChart({
               onChange={onSelectedValueKeyChange}
             />
           ) : null}
+          {shouldShowScatterPickers(candidate, numericColumns) ? (
+            <>
+              <NumericKeyPicker
+                label="X축"
+                ariaLabel="산점도 X축 컬럼"
+                numericColumns={numericColumns}
+                selectedKey={candidate.xKey}
+                onChange={onSelectedDimensionKeyChange}
+              />
+              <NumericKeyPicker
+                label="Y축"
+                ariaLabel="산점도 Y축 컬럼"
+                numericColumns={numericColumns}
+                selectedKey={candidate.yKey}
+                onChange={onSelectedValueKeyChange}
+              />
+            </>
+          ) : null}
           {shouldAggregateTimeSeriesPoints(candidate) ? (
             <TimeGroupingToolbar
               activeMode={timeGroupingMode}
@@ -173,12 +213,17 @@ function renderChart({
           ) : null}
         </ChartSettingsPanel>
       ) : null}
+      {windowState ? <BarWindowControls windowState={windowState} onChange={onBarWindowStartChange} /> : null}
       {renderPlan.notice ? (
         <p className="render-notice" data-testid="render-notice">
           {formatRenderNotice(renderPlan.notice)}
         </p>
       ) : null}
-      <ChartSurface candidate={candidate} points={renderPlan.points} notice={renderPlan.notice} />
+      <ChartSurface
+        candidate={candidate}
+        points={renderPlan.points}
+        label={formatChartLabel(candidate.title, renderPlan.points.length, renderPlan.notice, windowState)}
+      />
     </div>
   );
 }
@@ -192,11 +237,22 @@ function formatRenderNotice(notice: ChartRenderNotice): string {
   return `전체 ${originalCount}개 데이터를 기준으로 계산했고, 화면에는 ${renderedCount}개 대표 지점만 표시합니다. ${notice.reason}`;
 }
 
-function formatChartLabel(title: string, notice: ChartRenderNotice): string {
-  const originalCount = notice.originalCount.toLocaleString('ko-KR');
-  const renderedCount = notice.renderedCount.toLocaleString('ko-KR');
-  const unit = notice.strategy === 'grouped' ? '묶음' : '대표 지점';
-  return `${title} 시각화, 전체 ${originalCount}개 중 ${renderedCount}개 ${unit}`;
+function formatChartLabel(
+  title: string,
+  visibleCount: number,
+  notice: ChartRenderNotice | null,
+  windowState: ChartWindowState | null,
+): string {
+  if (windowState) {
+    return `${title} 시각화, 전체 ${windowState.totalCount.toLocaleString('ko-KR')}개 중 ${windowState.startIndex + 1}-${windowState.endIndex} 구간 ${visibleCount}개`;
+  }
+  if (notice) {
+    const originalCount = notice.originalCount.toLocaleString('ko-KR');
+    const renderedCount = notice.renderedCount.toLocaleString('ko-KR');
+    const unit = notice.strategy === 'grouped' ? '묶음' : '대표 지점';
+    return `${title} 시각화, 전체 ${originalCount}개 중 ${renderedCount}개 ${unit}`;
+  }
+  return `${title} 시각화, ${visibleCount}개 지점`;
 }
 
 function ChartSettingsPanel({ children }: { children: React.ReactNode }) {
@@ -250,6 +306,68 @@ function ValueKeyPicker({
         ))}
       </select>
     </label>
+  );
+}
+
+function NumericKeyPicker({
+  label,
+  ariaLabel,
+  numericColumns,
+  selectedKey,
+  onChange,
+}: {
+  label: string;
+  ariaLabel: string;
+  numericColumns: string[];
+  selectedKey: string | null | undefined;
+  onChange: (key: string) => void;
+}) {
+  return (
+    <label className="chart-select-field">
+      <span>{label}</span>
+      <select aria-label={ariaLabel} value={selectedKey ?? numericColumns[0] ?? ''} onChange={(event) => onChange(event.target.value)}>
+        {numericColumns.map((column) => (
+          <option key={column} value={column}>
+            {column}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function BarWindowControls({
+  windowState,
+  onChange,
+}: {
+  windowState: ChartWindowState;
+  onChange: (start: number) => void;
+}) {
+  const lastStart = getLastWindowStart(windowState.totalCount, windowState.pageSize);
+  const previousStart = Math.max(0, windowState.startIndex - windowState.pageSize);
+  const nextStart = Math.min(lastStart, windowState.startIndex + windowState.pageSize);
+  const rangeText = `${(windowState.startIndex + 1).toLocaleString('ko-KR')}-${windowState.endIndex.toLocaleString('ko-KR')} / ${windowState.totalCount.toLocaleString('ko-KR')}`;
+
+  return (
+    <section className="chart-range-panel" aria-label="막대 차트 표시 구간">
+      <span>20개씩 보기</span>
+      <button type="button" onClick={() => onChange(previousStart)} disabled={windowState.startIndex === 0}>
+        이전
+      </button>
+      <input
+        type="range"
+        min={0}
+        max={lastStart}
+        step={windowState.pageSize}
+        value={Math.min(windowState.startIndex, lastStart)}
+        aria-label="막대 차트 표시 시작 위치"
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
+      <button type="button" onClick={() => onChange(nextStart)} disabled={windowState.endIndex >= windowState.totalCount}>
+        다음
+      </button>
+      <strong>{rangeText}</strong>
+    </section>
   );
 }
 
@@ -311,8 +429,7 @@ function TimeGroupingToolbar({
   );
 }
 
-function ChartSurface({ candidate, points, notice }: { candidate: ChartCandidate; points: Point[]; notice: ChartRenderNotice | null }) {
-  const label = notice ? formatChartLabel(candidate.title, notice) : `${candidate.title} 시각화, ${points.length}개 지점`;
+function ChartSurface({ candidate, points, label }: { candidate: ChartCandidate; points: Point[]; label: string }) {
   const showBrush = shouldShowBrush(candidate, points);
 
   return (
@@ -433,7 +550,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 }
 
 function shouldShowBrush(candidate: ChartCandidate, points: Point[]): boolean {
-  return (candidate.id === 'bar' || candidate.id === 'line' || candidate.id === 'area') && points.length > 24;
+  return (candidate.id === 'line' || candidate.id === 'area') && points.length > 24;
 }
 
 function shouldAggregateCategoryPoints(candidate: ChartCandidate): boolean {
@@ -449,6 +566,10 @@ function shouldShowValueKeyPicker(candidate: ChartCandidate, numericColumns: str
   return Boolean(candidate.yKey || candidate.valueKey);
 }
 
+function shouldShowScatterPickers(candidate: ChartCandidate, numericColumns: string[]): boolean {
+  return candidate.id === 'scatter' && numericColumns.length > 1;
+}
+
 function shouldShowDimensionPicker(candidate: ChartCandidate, dimensionColumns: string[]): boolean {
   if (dimensionColumns.length <= 1) return false;
   return candidate.id === 'bar' || candidate.id === 'horizontalBar' || candidate.id === 'pie' || candidate.id === 'donut' || candidate.id === 'radar';
@@ -457,7 +578,25 @@ function shouldShowDimensionPicker(candidate: ChartCandidate, dimensionColumns: 
 function shouldShowChartSettings(candidate: ChartCandidate, numericColumns: string[], dimensionColumns: string[]): boolean {
   return shouldAggregateTimeSeriesPoints(candidate)
     || shouldShowValueKeyPicker(candidate, numericColumns)
-    || shouldShowDimensionPicker(candidate, dimensionColumns);
+    || shouldShowDimensionPicker(candidate, dimensionColumns)
+    || shouldShowScatterPickers(candidate, numericColumns);
+}
+
+function getBarWindowState(candidate: ChartCandidate, points: Point[], requestedStart: number): ChartWindowState | null {
+  if (candidate.id !== 'bar' && candidate.id !== 'horizontalBar') return null;
+  if (points.length <= BAR_WINDOW_SIZE) return null;
+  const lastStart = getLastWindowStart(points.length, BAR_WINDOW_SIZE);
+  const startIndex = Math.min(Math.max(0, requestedStart), lastStart);
+  return {
+    startIndex,
+    endIndex: Math.min(points.length, startIndex + BAR_WINDOW_SIZE),
+    totalCount: points.length,
+    pageSize: BAR_WINDOW_SIZE,
+  };
+}
+
+function getLastWindowStart(totalCount: number, pageSize: number): number {
+  return Math.max(0, Math.floor((totalCount - 1) / pageSize) * pageSize);
 }
 
 
@@ -502,7 +641,15 @@ function withSelectedKeys(
   dateColumns: string[],
 ): ChartCandidate {
   let nextCandidate = candidate;
-  if (valueKey && candidate.id !== 'scatter') {
+  if (candidate.id === 'scatter') {
+    return {
+      ...nextCandidate,
+      xKey: dimensionKey ?? candidate.xKey,
+      yKey: valueKey ?? candidate.yKey,
+    };
+  }
+
+  if (valueKey) {
     if (candidate.yKey) nextCandidate = { ...nextCandidate, yKey: valueKey };
     if (candidate.valueKey) nextCandidate = { ...nextCandidate, valueKey };
   }

@@ -1104,6 +1104,46 @@ th {
   font-weight: 800;
 }
 
+.chart-range-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.chart-range-panel button {
+  border: 1px solid rgba(123, 199, 255, 0.22);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.chart-range-panel button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.chart-range-panel input {
+  width: min(180px, 36vw);
+  accent-color: var(--accent-2);
+}
+
+.chart-range-panel strong {
+  color: var(--ink);
+  white-space: nowrap;
+}
+
 .chart-select-field {
   display: inline-flex;
   align-items: center;
@@ -1237,6 +1277,10 @@ html[data-theme='light'] .chart-select-field select {
   background: rgba(255, 255, 255, 0.9);
 }
 
+html[data-theme='light'] .chart-range-panel button {
+  background: rgba(255, 255, 255, 0.78);
+}
+
 html[data-theme='light'] .chart-tab.is-selected {
   background: linear-gradient(135deg, rgba(108, 152, 0, 0.12), rgba(37, 99, 235, 0.08));
 }
@@ -1261,6 +1305,10 @@ html[data-theme='light'] .file-action.is-dragging {
   }
 
   .chart-settings-panel {
+    width: 100%;
+  }
+
+  .chart-range-panel {
     width: 100%;
   }
 

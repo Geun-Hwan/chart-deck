@@ -56,7 +56,7 @@ export function buildChartCandidates(profiles: ColumnProfile[]): ChartCandidate[
           title: '가로 막대 차트',
           status: categoryColumn ? 'ready' : 'warning',
           reason: categoryColumn
-            ? `${categoryColumn.name}별 ${firstNumber.name} 값을 가로 방향으로 비교합니다. 항목이 많으면 상위 항목 중심으로 봅니다.`
+            ? `${categoryColumn.name}별 ${firstNumber.name} 값을 가로 방향으로 비교합니다. 항목이 많으면 20개씩 구간을 넘겨 봅니다.`
             : `${labelColumn.name} 컬럼을 라벨로 삼아 ${firstNumber.name} 값을 가로 방향으로 비교합니다.`,
           categoryKey: labelColumn.name,
           valueKey: firstNumber.name,

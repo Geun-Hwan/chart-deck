@@ -102,6 +102,30 @@ test('막대 차트도 날짜 기준 월별 집계로 바꿔 볼 수 있다', as
   await expect(chart).toContainText('2026-02');
 });
 
+test('막대 차트와 가로 막대 차트는 20개씩 구간을 넘겨 볼 수 있다', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /CSV 붙여넣기 열기|텍스트 붙여넣기 열기/ }).click();
+  const rows = ['item,value'];
+  for (let index = 1; index <= 45; index += 1) {
+    rows.push(`항목${index},${index * 10}`);
+  }
+  await page.getByRole('textbox', { name: 'CSV 텍스트 붙여넣기' }).fill(rows.join('\n'));
+  await page.getByRole('button', { name: '차트에 반영하고 닫기' }).click();
+
+  await page.getByRole('tab', { name: /막대 차트/ }).first().click();
+  await expect(page.getByRole('region', { name: '막대 차트 표시 구간' })).toContainText('1-20 / 45');
+  await expect(page.getByRole('img', { name: /막대 차트 시각화, 전체 45개 중 1-20 구간 20개/ }).first()).toBeVisible();
+  await page.getByRole('region', { name: '막대 차트 표시 구간' }).getByRole('button', { name: '다음' }).click();
+  await expect(page.getByRole('region', { name: '막대 차트 표시 구간' })).toContainText('21-40 / 45');
+
+  await page.getByRole('tab', { name: '가로 막대 차트' }).click();
+  await expect(page.getByRole('region', { name: '막대 차트 표시 구간' })).toContainText('1-20 / 45');
+  await page.getByRole('region', { name: '막대 차트 표시 구간' }).getByRole('button', { name: '다음' }).click();
+  await page.getByRole('region', { name: '막대 차트 표시 구간' }).getByRole('button', { name: '다음' }).click();
+  await expect(page.getByRole('region', { name: '막대 차트 표시 구간' })).toContainText('41-45 / 45');
+});
+
 test('CSV 파일 선택과 데이터 비우기가 실제로 동작한다', async ({ page }) => {
   await page.goto('/');
 
@@ -249,6 +273,12 @@ test('산점도는 첫 번째 숫자 컬럼을 x축으로 사용해 렌더링한
 
   await expect(page.getByRole('heading', { name: '산점도' }).first()).toBeVisible();
   await expect(page.getByRole('img', { name: '산점도 시각화, 3개 지점' }).first()).toBeVisible();
+  await expect(page.getByLabel('산점도 X축 컬럼')).toHaveValue('x');
+  await expect(page.getByLabel('산점도 Y축 컬럼')).toHaveValue('y');
+  await page.getByLabel('산점도 X축 컬럼').selectOption('y');
+  await page.getByLabel('산점도 Y축 컬럼').selectOption('x');
+  await expect(page.getByLabel('산점도 X축 컬럼')).toHaveValue('y');
+  await expect(page.getByLabel('산점도 Y축 컬럼')).toHaveValue('x');
 });
 
 test('키보드 입력과 오류 알림은 접근성 역할을 유지한다', async ({ page }) => {
