@@ -38,6 +38,7 @@ type Point = {
   label: string;
   x: number;
   value: number;
+  sourceCount: number;
 };
 
 type ChartWindowState = {
@@ -541,10 +542,12 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
   if (!active || !payload?.length) return null;
   const point = payload[0]?.payload;
   const value = payload[0]?.value ?? point?.value;
+  const sourceCount = point?.sourceCount ?? 1;
   return (
     <div className="chart-tooltip">
       <strong>{point?.label ?? label}</strong>
       <span>{typeof value === 'number' ? formatAxisValue(value) : '-'}</span>
+      <em>{`데이터 ${sourceCount.toLocaleString('ko-KR')}개`}</em>
     </div>
   );
 }
@@ -605,10 +608,11 @@ function aggregatePointsByLabel(points: Point[]): Point[] {
   for (const point of points) {
     const current = totals.get(point.label);
     if (!current) {
-      totals.set(point.label, { ...point });
+      totals.set(point.label, { ...point, sourceCount: point.sourceCount ?? 1 });
       continue;
     }
     current.value += point.value;
+    current.sourceCount += point.sourceCount ?? 1;
   }
   return [...totals.values()];
 }
@@ -700,6 +704,7 @@ function toPoints(candidate: ChartCandidate, rows: DataRow[], useNumericX = fals
         label: xKey ? String(row[xKey] ?? index + 1) : String(index + 1),
         x: xValue ?? index,
         value,
+        sourceCount: 1,
       };
     })
     .filter((point): point is Point => point !== null);

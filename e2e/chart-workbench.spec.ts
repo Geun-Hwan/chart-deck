@@ -80,6 +80,8 @@ test('범주형 차트는 동일 범주를 합산해 중복 라벨을 줄인다'
   await expect(chart).toContainText('검색');
   await expect(chart).toContainText('광고');
   await expect(chart).toContainText('추천');
+  await chart.locator('.recharts-bar-rectangle').first().hover();
+  await expect(page.locator('.chart-tooltip')).toContainText('데이터 2개');
 });
 
 test('막대 차트도 날짜 기준 월별 집계로 바꿔 볼 수 있다', async ({ page }) => {
@@ -100,6 +102,8 @@ test('막대 차트도 날짜 기준 월별 집계로 바꿔 볼 수 있다', as
   await expect(chart).toBeVisible();
   await expect(chart).toContainText('2026-01');
   await expect(chart).toContainText('2026-02');
+  await chart.locator('.recharts-bar-rectangle').first().hover();
+  await expect(page.locator('.chart-tooltip')).toContainText('데이터 2개');
 });
 
 test('막대 차트와 가로 막대 차트는 20개씩 구간을 넘겨 볼 수 있다', async ({ page }) => {

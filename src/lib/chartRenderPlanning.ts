@@ -2,6 +2,7 @@ export type ChartPointLike = {
   label: string;
   x: number;
   value: number;
+  sourceCount?: number;
 };
 
 export type ChartRenderStrategy = 'representative' | 'grouped';
@@ -94,9 +95,11 @@ function compactByValue<T extends ChartPointLike>(points: T[], limit: number, re
 
   const sorted = [...points].sort((left, right) => Math.max(right.value, 0) - Math.max(left.value, 0));
   const visible = sorted.slice(0, limit - 1);
-  const otherValue = sorted.slice(limit - 1).reduce((sum, point) => sum + Math.max(point.value, 0), 0);
+  const otherPoints = sorted.slice(limit - 1);
+  const otherValue = otherPoints.reduce((sum, point) => sum + Math.max(point.value, 0), 0);
+  const otherCount = otherPoints.reduce((sum, point) => sum + (point.sourceCount ?? 1), 0);
   const compacted = otherValue > 0
-    ? [...visible, { ...visible[0]!, label: '기타', x: visible.length, value: otherValue }]
+    ? [...visible, { ...visible[0]!, label: '기타', x: visible.length, value: otherValue, sourceCount: otherCount }]
     : visible;
 
   return {

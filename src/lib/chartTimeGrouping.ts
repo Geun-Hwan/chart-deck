@@ -4,10 +4,11 @@ export type TimeSeriesPoint = {
   label: string;
   x: number;
   value: number;
+  sourceCount: number;
 };
 
 type GroupedPoint = TimeSeriesPoint & {
-  count: number;
+  sourceCount: number;
 };
 
 export function aggregateTimeSeriesPoints(
@@ -20,7 +21,7 @@ export function aggregateTimeSeriesPoints(
   for (const point of points) {
     const bucket = toTimeBucket(point.label, granularity);
     if (!bucket) {
-      grouped.set(`${point.label}-${point.x}`, { ...point, count: 1 });
+      grouped.set(`${point.label}-${point.x}`, { ...point, sourceCount: point.sourceCount ?? 1 });
       continue;
     }
 
@@ -30,19 +31,19 @@ export function aggregateTimeSeriesPoints(
         label: bucket.label,
         x: bucket.timestamp,
         value: point.value,
-        count: 1,
+        sourceCount: point.sourceCount ?? 1,
       });
       continue;
     }
 
     current.value += point.value;
-    current.count += 1;
+    current.sourceCount += point.sourceCount ?? 1;
   }
 
   return [...grouped.values()]
-    .map(({ count, ...point }) => ({
+    .map((point) => ({
       ...point,
-      value: method === 'average' ? point.value / count : point.value,
+      value: method === 'average' ? point.value / point.sourceCount : point.value,
     }))
     .sort((left, right) => left.x - right.x);
 }

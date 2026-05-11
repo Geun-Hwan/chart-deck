@@ -1225,6 +1225,13 @@ th {
   font-weight: 900;
 }
 
+.chart-tooltip em {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
 html[data-theme='light'] body {
   background: linear-gradient(180deg, #f5f8fc 0%, #edf3fa 40%, #e8eef7 100%);
 }
